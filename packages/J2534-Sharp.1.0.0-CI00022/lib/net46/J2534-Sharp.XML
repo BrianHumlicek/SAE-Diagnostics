@@ -1,0 +1,255 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>J2534-Sharp</name>
+    </assembly>
+    <members>
+        <member name="M:SAE.J2534.APIFactory.GetAPIList">
+            <summary>
+            Queries the registry for registered J2534 API's
+            </summary>
+            <returns>Array of APIInfo</returns>
+        </member>
+        <member name="M:SAE.J2534.APIFactory.GetAPI(System.String)">
+            <summary>
+            Loads an API, verifies its signature and returns the managed wrapper 
+            </summary>
+            <param name="Filename">DLL File to load</param>
+            <returns>JManaged 2534API</returns>
+        </member>
+        <member name="M:SAE.J2534.API.GetDeviceList">
+            <summary>
+            Gets a list of discoverable devices
+            <para>NOTE: Only supported by v5.00API or Drewtech</para>
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:SAE.J2534.API.GetDevice(System.String)">
+            <summary>
+            Opens a J2534 device using this API
+            </summary>
+            <param name="DeviceName">The name of the device or blank to open the first available</param>
+            <returns>Device object</returns>
+        </member>
+        <member name="M:SAE.J2534.API.GetNextCarDAQ_RESET">
+            <summary>
+            Resets the GetNextCarDAQ enumerator
+            <para>NOTE: Drewtech ONLY</para>
+            </summary>
+        </member>
+        <member name="M:SAE.J2534.API.GetNextCarDAQ">
+            <summary>
+            Enumerates through connected Drewtech devices
+            <para>NOTE: Drewtech ONLY</para>
+            </summary>
+            <returns>GetNextCarDAQResults</returns>
+        </member>
+        <member name="M:SAE.J2534.Device.SetProgrammingVoltage(SAE.J2534.Pin,System.Int32)">
+            <summary>
+            Turns on the programming voltage for the device
+            </summary>
+            <param name="PinNumber">Pin number</param>
+            <param name="Voltage">voltage (mV)</param>
+        </member>
+        <member name="M:SAE.J2534.Device.MeasureBatteryVoltage">
+            <summary>
+            Measures the vehicle supply voltage
+            </summary>
+            <returns>Voltage (mV)</returns>
+        </member>
+        <member name="M:SAE.J2534.Device.MeasureProgrammingVoltage">
+            <summary>
+            Measures the delivered programming voltage
+            </summary>
+            <returns>Voltage (mV)</returns>
+        </member>
+        <member name="M:SAE.J2534.Device.GetChannel(SAE.J2534.Protocol,SAE.J2534.Baud,SAE.J2534.ConnectFlag,System.Boolean)">
+            <summary>
+            Opens a channel on the device using the specified parameters
+            </summary>
+            <param name="ProtocolID">Connection protocol</param>
+            <param name="Baud">Connection baud-rate</param>
+            <param name="ConnectFlags">Connection flags</param>
+            <returns>A connected J2534Channel object</returns>
+        </member>
+        <member name="M:SAE.J2534.Channel.GetMessage">
+            <summary>
+            Gets a single message using the DefaultRxTimeout
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:SAE.J2534.Channel.GetMessages(System.Int32)">
+            <summary>
+            Reads 'NumMsgs' messages from the input buffer using the DefaultRxTimeout
+            </summary>
+            <param name="NumMsgs">The number of messages to return. Due to timeout, the number of messages returned may be less than the number requested.  Number must be less than or equal to J2534.CONST.HEAPMESSAGEBUFFERSIZE (default is 200)</param>
+        </member>
+        <member name="M:SAE.J2534.Channel.GetMessages(System.Int32,System.Int32)">
+            <summary>
+            Reads 'NumMsgs' messages from the input buffer.
+            </summary>
+            <param name="NumMsgs">The number of messages to return. Due to timeout, the number of messages returned may be less than the number requested.  Number must be less than or equal to J2534.CONST.HEAPMESSAGEBUFFERSIZE (default is 200)</param>
+            <param name="Timeout">Timeout (in milliseconds) for read completion. A value of zero reads buffered messages and returns immediately. A non-zero value blocks (does not return) until the specified number of messages have been read, or until the timeout expires.</param>
+        </member>
+        <member name="M:SAE.J2534.Channel.SendMessage(System.Collections.Generic.IEnumerable{System.Byte})">
+            <summary>
+            Sends a single message 'Message' created from raw bytes
+            </summary>
+            <param name="Message">Raw message bytes to send</param>
+        </member>
+        <member name="M:SAE.J2534.Channel.SendMessages(System.Collections.Generic.IEnumerable{System.Byte}[])">
+            <summary>
+            Sends an array of messages created from raw bytes
+            </summary>
+            <param name="Messages">Array of raw message bytes</param>
+        </member>
+        <member name="M:SAE.J2534.Channel.SendMessage(SAE.J2534.Message)">
+            <summary>
+            Sends a single J2534Message
+            </summary>
+            <param name="Message">J2534Message</param>
+        </member>
+        <member name="M:SAE.J2534.Channel.SendMessages(SAE.J2534.Message[])">
+            <summary>
+            Sends an array of J2534Messages
+            </summary>
+            <param name="Messages">J2534Message Array</param>
+        </member>
+        <member name="M:SAE.J2534.Channel.SendMessages(SAE.J2534.HeapMessageArray)">
+            <summary>
+            Sends the contents of a HeapMessageArray
+            </summary>
+            <param name="hJ2534MessageArray_Local">HeapMessageArray to send</param>
+        </member>
+        <member name="M:SAE.J2534.Channel.StartPeriodicMessage(SAE.J2534.PeriodicMessage)">
+            <summary>
+            Starts automated periodic transmission of a message
+            </summary>
+            <param name="PeriodicMessage">Periodic message object</param>
+            <returns>Message index</returns>
+        </member>
+        <!-- Badly formed XML comment ignored for member "M:SAE.J2534.Channel.StopPeriodicMsg(System.Int32)" -->
+        <member name="M:SAE.J2534.Channel.StartMsgFilter(SAE.J2534.MessageFilter)">
+            <summary>
+            Starts a message filter
+            </summary>
+            <param name="Filter">Message filter object</param>
+            <returns>Filter index</returns>
+        </member>
+        <member name="M:SAE.J2534.Channel.StopMsgFilter(System.Int32)">
+            <summary>
+            Stops a message filter
+            </summary>
+            <param name="Index">Filter index</param>
+        </member>
+        <member name="M:SAE.J2534.Channel.GetConfig(SAE.J2534.Parameter)">
+            <summary>
+            Gets a configuration parameter for the channel
+            </summary>
+            <param name="Parameter">Parameter to return</param>
+            <returns>Parameter value</returns>
+        </member>
+        <member name="M:SAE.J2534.Channel.SetConfig(SAE.J2534.Parameter,System.Int32)">
+            <summary>
+            Sets a configuration parameter for the channel
+            </summary>
+            <param name="Parameter">Parameter to set</param>
+            <param name="Value">Parameter value</param>
+        </member>
+        <member name="M:SAE.J2534.Channel.GetConfig(SAE.J2534.SConfig[])">
+            <summary>
+            Gets a list of configuration parameters for the channel
+            </summary>
+            <param name="Parameter">List of parameters to get</param>
+            <returns>Parameter list</returns>
+        </member>
+        <member name="M:SAE.J2534.Channel.SetConfig(SAE.J2534.SConfig[])">
+            <summary>
+            Sets a list of configuration parameters for the channel
+            </summary>
+            <param name="Parameter">List of parameters to set</param>
+        </member>
+        <member name="M:SAE.J2534.Channel.ClearTxBuffer">
+            <summary>
+            Empties the transmit buffer for this channel
+            </summary>
+        </member>
+        <member name="M:SAE.J2534.Channel.ClearRxBuffer">
+            <summary>
+            Empties the receive buffer for this channel
+            </summary>
+        </member>
+        <member name="M:SAE.J2534.Channel.ClearPeriodicMsgs">
+            <summary>
+            Stops and clears any periodic messages that have been configured for this channel
+            </summary>
+        </member>
+        <member name="M:SAE.J2534.Channel.ClearMsgFilters">
+            <summary>
+            Stops and clears any message filters that have been configured for this channel
+            </summary>
+        </member>
+        <member name="M:SAE.J2534.Channel.ClearFunctMsgLookupTable">
+            <summary>
+            Stops and clears all functional message address filters configured for this channel
+            </summary>
+        </member>
+        <member name="M:SAE.J2534.Channel.AddToFunctMsgLookupTable(System.Byte)">
+            <summary>
+            Starts a functional message address filter for this channel
+            </summary>
+            <param name="Addr">Address to pass</param>
+        </member>
+        <member name="M:SAE.J2534.Channel.AddToFunctMsgLookupTable(System.Collections.Generic.List{System.Byte})">
+            <summary>
+            Starts a list of functional message address filters for this channel
+            </summary>
+            <param name="AddressList">Address list to pass</param>
+        </member>
+        <member name="M:SAE.J2534.Channel.DeleteFromFunctMsgLookupTable(System.Byte)">
+            <summary>
+            Stops and clears a single functional address message filter for this channel
+            </summary>
+            <param name="Addr">Address to remove</param>
+        </member>
+        <member name="M:SAE.J2534.Channel.DeleteFromFunctMsgLookupTable(System.Collections.Generic.IEnumerable{System.Byte})">
+            <summary>
+            Stops and clears a list of functional address filters for this channel
+            </summary>
+            <param name="AddressList">Address list to stop</param>
+        </member>
+        <member name="M:SAE.J2534.Channel.FiveBaudInit(System.Byte)">
+            <summary>
+            Performs a 5 baud handshake for ISO9141 initialization
+            </summary>
+            <param name="TargetAddress">Address to handshake with</param>
+            <returns>byte[2]</returns>
+        </member>
+        <member name="M:SAE.J2534.Channel.FastInit(SAE.J2534.Message)">
+            <summary>
+            Performs a fast initialization sequence
+            </summary>
+            <param name="TxMessage"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SAE.J2534.Channel.SetProgrammingVoltage(SAE.J2534.Pin,System.Int32)">
+            <summary>
+            Turns on the programming voltage for the device
+            </summary>
+            <param name="PinNumber">Pin number</param>
+            <param name="Voltage">voltage (mV)</param>
+        </member>
+        <member name="M:SAE.J2534.Channel.MeasureProgrammingVoltage">
+            <summary>
+            Measures the delivered programming voltage
+            </summary>
+            <returns>Voltage (mV)</returns>
+        </member>
+        <member name="M:SAE.J2534.Channel.MeasureBatteryVoltage">
+            <summary>
+            Measures the vehicle supply voltage
+            </summary>
+            <returns>Voltage (mV)</returns>
+        </member>
+    </members>
+</doc>

@@ -1,0 +1,30 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.27428.2043
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SAE-Diagnostics", "Src\SAE-Diagnostics.csproj", "{DBA67A7E-B4C3-444E-A67A-8D9EA1037343}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{2A2916ED-7D91-47E9-919E-8A3840F574DE}"
+	ProjectSection(SolutionItems) = preProject
+		LICENSE.md = LICENSE.md
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{DBA67A7E-B4C3-444E-A67A-8D9EA1037343}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DBA67A7E-B4C3-444E-A67A-8D9EA1037343}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DBA67A7E-B4C3-444E-A67A-8D9EA1037343}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DBA67A7E-B4C3-444E-A67A-8D9EA1037343}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {EE76F30D-3B60-41B6-91C1-F647EC1F267A}
+	EndGlobalSection
+EndGlobal
