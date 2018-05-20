@@ -21,7 +21,7 @@
 #endregion
 using System;
 
-namespace SAE.J1850
+namespace SAE.J1979.J1850
 {
     class VPW_Session : Session
     {

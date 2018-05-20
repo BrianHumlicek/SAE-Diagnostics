@@ -77,6 +77,7 @@ namespace RealtimeQueue
                 {
                     rootEnumerable.RootQueue.addActionMultiplex.Invoke();
                     if (TryMove(Predicate, Decueue)) return true;
+                    //System.Threading.Thread.Sleep(100);   //This line will throttle the rate the API is polled for data
                 } while (TimeoutClock.ElapsedMilliseconds < timeout);
                 return false;
             }
@@ -99,12 +100,14 @@ namespace RealtimeQueue
                     while (!currentNode.Next.Equals(rootEnumerable.RootQueue.linkNode))
                     {
                         rootEnumerable.Bookmark = currentNode = currentNode.Next;
+
                         if (Predicate?.Invoke(currentNode.Item) ?? true)
                         {
                             StartNode.EnumeratorRelease();
                             currentNode.EnumeratorHold();
                             if (Decueue)
                             {
+                                rootEnumerable.Bookmark = currentNode.Next;
                                 currentNode.Remove();
                                 rootEnumerable.RootQueue.Count--;
                             }

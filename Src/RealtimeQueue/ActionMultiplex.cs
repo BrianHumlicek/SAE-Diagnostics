@@ -25,7 +25,7 @@ using Common;
 
 namespace RealtimeQueue
 {
-    public class ActionMultiplex
+    internal class ActionMultiplex
     {
         private bool PropagateExceptions;
         private BoolInterlock Interlock = new BoolInterlock();

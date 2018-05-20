@@ -19,27 +19,10 @@
  * SOFTWARE.
  */
 #endregion
-using System;
 
-namespace SAE.ISO15765
+namespace SAE.J1979.J1850
 {
-    public class Header : IHeader
+    class ISO9141_Session : Session
     {
-        public int MaxLength { get { return 4; } }
-
-        public byte[] Rx
-        {
-            get
-            {
-                throw new NotImplementedException();
-            }
-        }
-        public byte[] Tx
-        {
-            get
-            {
-                throw new NotImplementedException();
-            }
-        }
     }
 }

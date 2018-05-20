@@ -21,7 +21,7 @@
 #endregion
 using System;
 
-namespace SAE.J1850
+namespace SAE.J1979.J1850
 {
     public abstract class Session : J1979.Session
     {

@@ -25,19 +25,19 @@ namespace SAE
 {
     public class ServiceResult
     {
-        public SAEResponse Response { get; }
+        public Response Response { get; }
         public byte[] Data { get; }
-        public ServiceResult(SAEResponse Response)
+        public ServiceResult(Response Response)
         {
             this.Response = Response;
             Data = Array.Empty<byte>();
         }
         public ServiceResult(byte[] Data)
         {
-            Response = SAEResponse.NONE;
+            Response = Response.NONE;
             this.Data = Data;
         }
-        public ServiceResult(SAEResponse Response, byte[] Data)
+        public ServiceResult(Response Response, byte[] Data)
         {
             this.Response = Response;
             this.Data = Data;

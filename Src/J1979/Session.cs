@@ -133,7 +133,11 @@ namespace SAE.J1979
             lock (ResponseQuery)
             {
                 Channel.SendMessage(Message);
-
+                //var t = Message.ToArray();
+                //if (t[3] == 0x27 && t[4] == 0x02)
+                //{
+                //    var a = 5;
+                //}
                 var Response = ResponseQuery.FirstOrDefault();
 
                 var Offset = header.Rx.Length + 1 + NumOfParams;
@@ -142,7 +146,7 @@ namespace SAE.J1979
 
                 Response = rxQueue.GetEnumerable(0).DecueueWhere(failPredicate(Mode)).FirstOrDefault();
 
-                if (Response != null) return new ServiceResult((SAEResponse)Response.Data.Last());
+                if (Response != null) return new ServiceResult((Response)Response.Data.Last());
             }
 
             throw new Exception($"No response from module for service mode {Mode}!");

@@ -22,7 +22,7 @@
 
  namespace SAE
 {
-    public enum SAEResponse
+    public enum Response
     {
         AFFIRMITIVE_RESPONSE = 0x00,
         GENERAL_REJECT = 0x10,

@@ -22,7 +22,7 @@
 using System;
 using Common.Extensions;
 
-namespace SAE.J1850
+namespace SAE.J1979.J1850
 {
     public class Header : IHeader
     {

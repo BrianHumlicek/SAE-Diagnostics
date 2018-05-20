@@ -19,10 +19,15 @@
  * SOFTWARE.
  */
 #endregion
+using System;
 
-namespace SAE.J1850
+namespace SAE.J1979.ISO14229
 {
-    class ISO9141_Session : Session
+    public class Session : ISO15765.Session
     {
+        public Session(J2534.Device Device) : base(Device)
+        {
+
+        }
     }
 }

@@ -19,11 +19,31 @@
  * SOFTWARE.
  */
 #endregion
-using System;
 
-namespace SAE.ISO14229
+ namespace SAE.J1979.J1850
 {
-    class ISO14229_Session
+    public class PWM_Session : Session
     {
+        protected override SessionChannel sessionChannel { get; }
+        public PWM_Session(J2534.Device Device)
+        {
+            sessionChannel = SessionChannelFactory.GetSessionChannel(Device, J2534.Protocol.J1850PWM, J2534.Baud.J1850PWM, J2534.ConnectFlag.NONE);
+            initializeDefaults();
+        }
+        protected override void initializeDefaults()
+        {
+            base.initializeDefaults();
+            header.K_bit = false;
+            header.Priority = 6;
+            Channel.AddToFunctMsgLookupTable(0x6B);
+            Channel.SetConfig(J2534.Parameter.NODE_ADDRESS, header.Source);
+            Channel.StartMsgFilter(new J2534.MessageFilter()
+            {
+                Mask = new byte[] { 0x00, 0xFF, 0x00 },
+                Pattern = new byte[] { 0x00, (byte)header.Source, 0x00 },
+                FilterType = J2534.Filter.PASS_FILTER
+            });
+
+        }
     }
 }

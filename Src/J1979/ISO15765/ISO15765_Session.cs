@@ -20,9 +20,9 @@
  */
 #endregion
 
- namespace SAE.ISO15765
+ namespace SAE.J1979.ISO15765
 {
-    class Session : J1979.Session
+    public class Session : J1979.Session
     {
         protected override SessionChannel sessionChannel { get; }
         public Session(J2534.Device Device) : base(new Header())
@@ -36,7 +36,7 @@
             Channel.ClearMsgFilters();
             for (int i = 0; i < 8; i++)
                 Channel.StartMsgFilter(new J2534.MessageFilter(J2534.UserFilterType.STANDARDISO15765,
-                                                         new byte[4] { 0x00, 0x00, 0x07, (byte)(0xE0 + i) }));
+                                                               new byte[4] { 0x00, 0x00, 0x07, (byte)(0xE0 + i) }));
             Channel.SetConfig(J2534.Parameter.LOOP_BACK, 0);
         }
     }

@@ -22,11 +22,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+
 using Common.Extensions;
 
 namespace SAE.J2190
 {
-    public class FordPWMSession : J1850.PWM_Session
+    public class FordPWMSession : J1979.J1850.PWM_Session
     {
         private byte[] broadcastmessage;
 
