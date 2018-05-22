@@ -29,5 +29,13 @@ namespace SAE.J1979.ISO14229
         {
 
         }
+        public override void InitializeDefaults()
+        {
+            base.InitializeDefaults();
+            for (int i = 0; i < 8; i++)
+                Channel.StartMsgFilter(new J2534.MessageFilter(J2534.UserFilterType.STANDARDISO15765,
+                                                               new byte[4] { 0x00, 0x00, 0x07, (byte)(0xE0 + i) }));
+            Channel.SetConfig(J2534.Parameter.LOOP_BACK, 0);
+        }
     }
 }

@@ -20,12 +20,16 @@
  */
 #endregion
 using System;
+using System.Threading;
+
 using RealtimeQueue;
 
 namespace SAE
 {
     public class SessionChannel : Common.LiteDisposable
     {
+        private Common.BoolInterlock initOneShot = new Common.BoolInterlock();
+        private EventWaitHandle initWaiter = new EventWaitHandle(false, EventResetMode.ManualReset);
         public int References;
         public J2534.Channel Channel { get; }
         public RealtimeQueue<J2534.Message> RxQueue { get; }
@@ -36,6 +40,27 @@ namespace SAE
             {
                 RxQueue.AddRange(Channel.GetMessages(200, 0).Messages);
             }));
+        }
+        public bool IsInitialized
+        {
+            get
+            {
+                if (initOneShot.Enter()) return false;
+                initWaiter.WaitOne();
+                return true;
+            }
+            set
+            {
+                if (value == true)
+                {
+                    initWaiter.Set();
+                }
+                else
+                {
+                    initWaiter.Reset();
+                    initOneShot.Exit();
+                }
+            }
         }
         protected override void DisposeManaged()
         {

@@ -38,9 +38,13 @@ namespace SAE.J1979
         {
             header = Header;
         }
-        protected virtual void initializeDefaults()
+        public virtual void InitializeDefaults()
         {
             Channel.ClearMsgFilters();
+            Channel.ClearPeriodicMsgs();
+            Channel.ClearFunctMsgLookupTable();
+            Channel.ClearRxBuffer();
+            Channel.ClearTxBuffer();
         }
         /// <summary>
         /// Request current powertrain diagnostic data

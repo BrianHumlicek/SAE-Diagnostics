@@ -28,11 +28,15 @@
         public PWM_Session(J2534.Device Device)
         {
             sessionChannel = SessionChannelFactory.GetSessionChannel(Device, J2534.Protocol.J1850PWM, J2534.Baud.J1850PWM, J2534.ConnectFlag.NONE);
-            initializeDefaults();
+            if (!sessionChannel.IsInitialized)
+            {
+                InitializeDefaults();
+                sessionChannel.IsInitialized = true;
+            }
         }
-        protected override void initializeDefaults()
+        public override void InitializeDefaults()
         {
-            base.initializeDefaults();
+            base.InitializeDefaults();
             header.K_bit = false;
             header.Priority = 6;
             Channel.AddToFunctMsgLookupTable(0x6B);

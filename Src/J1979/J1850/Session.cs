@@ -29,13 +29,13 @@ namespace SAE.J1979.J1850
         protected Session() : base(new J1850.Header())
         {
         }
-        protected override void initializeDefaults()
+        public override void InitializeDefaults()
         {
-            base.initializeDefaults();
+            base.InitializeDefaults();
         }
-        protected new J1850.Header header
+        protected new Header header
         {
-            get { return (J1850.Header) base.header; }
+            get { return (Header) base.header; }
         }
         public int SourceAddress
         {

@@ -34,6 +34,7 @@
     <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="J2190\Ford_ISO15765_Session.cs" />
     <Compile Include="RealtimeQueue\ActionMultiplex.cs" />
     <Compile Include="Common\ILogger.cs" />
     <Compile Include="IHeader.cs" />
@@ -56,8 +57,8 @@
     <Compile Include="ServiceResult.cs" />
     <Compile Include="J2190\Ford_PWM_Session.cs" />
     <Compile Include="J1979\J1850\Session.cs" />
-    <Compile Include="J1979\ISO14229\ISO14229_Session.cs" />
-    <Compile Include="J1979\ISO15765\ISO15765_Session.cs" />
+    <Compile Include="J1979\ISO14229\Session.cs" />
+    <Compile Include="J1979\ISO15765\Session.cs" />
     <Compile Include="J1979\J1850\ISO9141_Session.cs" />
     <Compile Include="J1979\J1850\PWM_Session.cs" />
     <Compile Include="J1979\J1850\VPW_Session.cs" />

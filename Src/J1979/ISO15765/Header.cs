@@ -19,27 +19,29 @@
  * SOFTWARE.
  */
 #endregion
-using System;
+using Common.Extensions;
 
 namespace SAE.J1979.ISO15765
 {
     public class Header : IHeader
     {
-        public int MaxLength { get { return 4; } }
-
-        public byte[] Rx
+        private byte[] tx;
+        private byte[] rx;
+        public Header(int Target = 0x7E0)
         {
-            get
+            this.Target = Target;
+        }
+        public int Target
+        {
+            set
             {
-                throw new NotImplementedException();
+                int Source = Target + 0x08;
+                tx = new byte[4] { 0x00, 0x00, Target.Byte1(), Target.Byte0() };
+                rx = new byte[4] { 0x00, 0x00, Source.Byte1(), Source.Byte0() };
             }
         }
-        public byte[] Tx
-        {
-            get
-            {
-                throw new NotImplementedException();
-            }
-        }
+        public int MaxLength => 4;
+        public byte[] Rx => rx;
+        public byte[] Tx => tx;
     }
 }

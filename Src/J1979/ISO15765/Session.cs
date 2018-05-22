@@ -19,25 +19,61 @@
  * SOFTWARE.
  */
 #endregion
+using System;
 
  namespace SAE.J1979.ISO15765
 {
     public class Session : J1979.Session
     {
         protected override SessionChannel sessionChannel { get; }
+
         public Session(J2534.Device Device) : base(new Header())
         {
             sessionChannel = SessionChannelFactory.GetSessionChannel(Device, J2534.Protocol.ISO15765, J2534.Baud.ISO15765, J2534.ConnectFlag.NONE);
-            InitializeDefaultConfigs();
+            if (!sessionChannel.IsInitialized)
+            {
+                InitializeDefaults();
+                sessionChannel.IsInitialized = true;
+            }
         }
-
-        private void InitializeDefaultConfigs()
+        public override void InitializeDefaults()
         {
-            Channel.ClearMsgFilters();
+            base.InitializeDefaults();
             for (int i = 0; i < 8; i++)
                 Channel.StartMsgFilter(new J2534.MessageFilter(J2534.UserFilterType.STANDARDISO15765,
                                                                new byte[4] { 0x00, 0x00, 0x07, (byte)(0xE0 + i) }));
             Channel.SetConfig(J2534.Parameter.LOOP_BACK, 0);
+            //Are these ISO15765 or Ford specific?
+            Channel.SetConfig(J2534.Parameter.ISO15765_BS, 0);
+            Channel.SetConfig(J2534.Parameter.ISO15765_STMIN, 0);
         }
+        protected new Header header
+        {
+            get { return (Header)base.header; }
+        }
+        protected override Predicate<J2534.Message> successPredicate(byte Mode)
+        {
+            return new Predicate<J2534.Message>(Message =>
+            {
+                if ((Message?.Data?.Length ?? 0) > 4 &&
+                    Message.Data[4] == (Mode ^ 0x40) &&
+                    Message.Data[3] == base.header.Rx[3] &&
+                    Message.Data[2] == base.header.Rx[2]) return true;
+                return false;
+            });
+        }
+        protected override Predicate<J2534.Message> failPredicate(byte Mode)
+        {
+            return new Predicate<J2534.Message>(Message =>
+            {
+                if ((Message?.Data?.Length ?? 0) > 5 &&
+                    Message.Data[5] == (byte)Mode &&
+                    Message.Data[4] == (byte)J1979.Mode.GENERAL_RESPONSE &&
+                    Message.Data[3] == base.header.Rx[3] &&
+                    Message.Data[2] == base.header.Rx[2]) return true;
+                return false;
+            });
+        }
+
     }
 }
