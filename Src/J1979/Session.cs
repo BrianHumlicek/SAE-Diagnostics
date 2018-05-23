@@ -137,11 +137,7 @@ namespace SAE.J1979
             lock (ResponseQuery)
             {
                 Channel.SendMessage(Message);
-                //var t = Message.ToArray();
-                //if (t[3] == 0x27 && t[4] == 0x02)
-                //{
-                //    var a = 5;
-                //}
+
                 var Response = ResponseQuery.FirstOrDefault();
 
                 var Offset = header.Rx.Length + 1 + NumOfParams;
@@ -169,6 +165,7 @@ namespace SAE.J1979
         }
         protected class IEnumerableCache
         {
+            //TODO: Change this to use array instead of dictionary.  Should be faster and lighter
             private Dictionary<byte, IEnumerable<J2534.Message>> cache { get; } = new Dictionary<byte, IEnumerable<J2534.Message>>();
             public IEnumerable<J2534.Message> Resolve(byte Mode, Func<IEnumerable<J2534.Message>> NewEnumerable)
             {

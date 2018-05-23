@@ -12,28 +12,6 @@ namespace SAE.J2190
         {
 
         }
-        public virtual bool BroadcastListen(int Timeout = 200)
-        {
-            byte[] InviteRequest = header.Tx.Concat(new byte[] { 0x10, 0x85 }).ToArray();
-            var BroadcastMessages = rxQueue.GetEnumerable(Timeout: 10, BookmarkEnumeration: true).DecueueWhere(msg =>
-            {
-                if (msg.Data.Length < 5) return false;
-                if (msg.Data[1] != 0x05) return false;
-                if (msg.Data[2] != 0x10) return false;
-                if (msg.Data[3] != 0x04) return false;
-                if (msg.Data[4] != 0x00) return false;
-                return true;
-            });
-            byte[] broadcastmessage;
-            do
-            {
-                Channel.SendMessage(InviteRequest);
-                broadcastmessage = BroadcastMessages.FirstOrDefault()?.Data;
-            } while (broadcastmessage == null);
-
-            return true;
-        }
-
         public void FEPSOn()
         {
             Channel.SetProgrammingVoltage(J2534.Pin.PIN_13, 18000);
@@ -48,6 +26,38 @@ namespace SAE.J2190
             //0x3E 0x01 gets a response from the module.  Anything else does not.
             J2534.PeriodicMessage TesterPresent = new J2534.PeriodicMessage(3000, header.Tx.Concat(new byte[2] { 0x3E, 0x02 }).ToArray(), J2534.TxFlag.NONE);
             Channel.StartPeriodicMessage(TesterPresent);
+        }
+        /// <summary>
+        /// Initiate diagnostic operation
+        /// </summary>
+        /// <param name="SessionState">Operational state to enter</param>
+        /// <returns></returns>
+        public ServiceResult Mode10(DiagnosticState SessionState)
+        {
+            //We need a special handler here with a 10ms timeout to accommodate the Ford IVFER request requirements.
+            //We also don't want to throw an exception if no response is received.
+            //The only issue is there is no locking done on the query, but there is no situation where another SAE request should be happening at the same time as this.
+            if (SessionState == DiagnosticState.IVFER)
+            {
+                var Message = header.Tx.Concat(new byte[] { (byte)Mode.INITIATE_DIAG_OP, (byte)SessionState });
+
+                Channel.SendMessage(Message);
+
+                var Response = rxQueue.GetEnumerable(10).DecueueWhere(successPredicate((byte)Mode.INITIATE_DIAG_OP)).FirstOrDefault();
+
+                var Offset = header.Rx.Length + 2;
+
+                if (Response != null) return new ServiceResult(new ArraySegment<byte>(Response.Data, Offset, Response.Data.Length - Offset).ToArray());
+
+                Response = rxQueue.DecueueWhere(failPredicate((byte)Mode.INITIATE_DIAG_OP)).FirstOrDefault();
+
+                if (Response != null) return new ServiceResult((Response)Response.Data.Last());
+                return null;
+            }
+            else
+            {
+                return serviceHandler((byte)Mode.INITIATE_DIAG_OP, 1, new byte[] { (byte)SessionState });
+            }
         }
         /// <summary>
         /// Request data by memory address
@@ -154,6 +164,11 @@ namespace SAE.J2190
         {
             throw new NotImplementedException();
         }
-
+    }
+    public enum DiagnosticState
+    {
+        Normal = 0x81,
+        STATE82 = 0x82, //Not sure what this is, but I know its necessary
+        IVFER = 0x85
     }
 }
