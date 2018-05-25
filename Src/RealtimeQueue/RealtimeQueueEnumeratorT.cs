@@ -77,7 +77,7 @@ namespace RealtimeQueue
                 {
                     rootEnumerable.RootQueue.addActionMultiplex.Invoke();
                     if (TryMove(Predicate, Decueue)) return true;
-                    //System.Threading.Thread.Sleep(100);   //This line will throttle the rate the API is polled for data
+                    //System.Threading.Thread.Sleep(20);   //This line will throttle the rate the API is polled for data
                 } while (TimeoutClock.ElapsedMilliseconds < timeout);
                 return false;
             }

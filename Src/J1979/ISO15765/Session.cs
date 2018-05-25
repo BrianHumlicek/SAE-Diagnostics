@@ -39,13 +39,19 @@ using System;
         public override void InitializeDefaults()
         {
             base.InitializeDefaults();
-            for (int i = 0; i < 8; i++)
+            for (byte addrLow = 0xE0; addrLow < 0xE1; addrLow++)
+            {
                 Channel.StartMsgFilter(new J2534.MessageFilter(J2534.UserFilterType.STANDARDISO15765,
-                                                               new byte[4] { 0x00, 0x00, 0x07, (byte)(0xE0 + i) }));
+                                                               new byte[4] { 0x00, 0x00, 0x07, addrLow }));
+                //Channel.StartMsgFilter(new J2534.MessageFilter(J2534.UserFilterType.PASS,
+                //                                               new byte[4] { 0x00, 0x00, 0x07, addrLow }));
+
+            }
             Channel.SetConfig(J2534.Parameter.LOOP_BACK, 0);
             //Are these ISO15765 or Ford specific?
-            Channel.SetConfig(J2534.Parameter.ISO15765_BS, 0);
-            Channel.SetConfig(J2534.Parameter.ISO15765_STMIN, 0);
+            //Channel.SetConfig(J2534.Parameter.ISO15765_BS, 0);
+            //Channel.SetConfig(J2534.Parameter.ISO15765_STMIN, 0);
+            Channel.DefaultTxFlag = J2534.TxFlag.ISO15765_FRAME_PAD;
         }
         protected new Header header
         {

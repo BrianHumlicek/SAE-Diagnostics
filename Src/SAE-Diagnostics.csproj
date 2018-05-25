@@ -34,7 +34,9 @@
     <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="J2190\Ford_ISO15765_Session.cs" />
+    <Compile Include="J1979\ISO14229\Definitions\Mode.cs" />
+    <Compile Include="J1979\ISO14229\Definitions\Subfunctions.cs" />
+    <Compile Include="J2190\Ford_CAN_Session.cs" />
     <Compile Include="RealtimeQueue\ActionMultiplex.cs" />
     <Compile Include="Common\ILogger.cs" />
     <Compile Include="IHeader.cs" />

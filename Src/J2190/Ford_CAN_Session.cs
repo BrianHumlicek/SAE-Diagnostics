@@ -5,10 +5,10 @@ using Common.Extensions;
 
 namespace SAE.J2190
 {
-    class Ford_ISO15765_Session : J1979.ISO15765.Session
+    public class Ford_CAN_Session : J1979.ISO15765.Session
     {
 
-        public Ford_ISO15765_Session(J2534.Device Device) : base(Device)
+        public Ford_CAN_Session(J2534.Device Device) : base(Device)
         {
 
         }
@@ -34,30 +34,25 @@ namespace SAE.J2190
         /// <returns></returns>
         public ServiceResult Mode10(DiagnosticState SessionState)
         {
-            //We need a special handler here with a 10ms timeout to accommodate the Ford IVFER request requirements.
-            //We also don't want to throw an exception if no response is received.
-            //The only issue is there is no locking done on the query, but there is no situation where another SAE request should be happening at the same time as this.
-            if (SessionState == DiagnosticState.IVFER)
-            {
-                var Message = header.Tx.Concat(new byte[] { (byte)Mode.INITIATE_DIAG_OP, (byte)SessionState });
-
-                Channel.SendMessage(Message);
-
-                var Response = rxQueue.GetEnumerable(10).DecueueWhere(successPredicate((byte)Mode.INITIATE_DIAG_OP)).FirstOrDefault();
-
-                var Offset = header.Rx.Length + 2;
-
-                if (Response != null) return new ServiceResult(new ArraySegment<byte>(Response.Data, Offset, Response.Data.Length - Offset).ToArray());
-
-                Response = rxQueue.DecueueWhere(failPredicate((byte)Mode.INITIATE_DIAG_OP)).FirstOrDefault();
-
-                if (Response != null) return new ServiceResult((Response)Response.Data.Last());
-                return null;
-            }
-            else
+            try
             {
                 return serviceHandler((byte)Mode.INITIATE_DIAG_OP, 1, new byte[] { (byte)SessionState });
             }
+            catch
+            {
+                if (SessionState == DiagnosticState.IVFER) return null;
+                throw;
+            }
+        }
+        /// <summary>
+        /// Module Reset
+        /// </summary>
+        /// <param name="Address"></param>
+        /// <returns></returns>
+        public ServiceResult Mode11(int Address)
+        {
+            throw new NotImplementedException();
+            return serviceHandler((byte)Mode.DATA_BY_ADDRESS, 2, new byte[] { Address.Byte3(), Address.Byte2(), Address.Byte1(), Address.Byte0() });
         }
         /// <summary>
         /// Request data by memory address
@@ -66,7 +61,7 @@ namespace SAE.J2190
         /// <returns></returns>
         public ServiceResult Mode23(int Address)
         {
-            return serviceHandler((byte)Mode.DATA_BY_ADDRESS, 2, new byte[] { Address.Byte2(), Address.Byte1(), Address.Byte0() });
+            return serviceHandler((byte)Mode.DATA_BY_ADDRESS, 2, new byte[] { Address.Byte3(), Address.Byte2(), Address.Byte1(), Address.Byte0() });
         }
         /// <summary>
         /// Request security access

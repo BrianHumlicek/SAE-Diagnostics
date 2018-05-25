@@ -35,8 +35,8 @@ namespace SAE.J1979.ISO15765
         {
             set
             {
-                int Source = Target + 0x08;
-                tx = new byte[4] { 0x00, 0x00, Target.Byte1(), Target.Byte0() };
+                int Source = value + 0x08;
+                tx = new byte[4] { 0x00, 0x00, value.Byte1(), value.Byte0() };
                 rx = new byte[4] { 0x00, 0x00, Source.Byte1(), Source.Byte0() };
             }
         }

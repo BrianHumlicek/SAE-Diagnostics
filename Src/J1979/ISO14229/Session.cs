@@ -20,22 +20,28 @@
  */
 #endregion
 using System;
+using System.Collections.Generic;
 
 namespace SAE.J1979.ISO14229
 {
-    public class Session : ISO15765.Session
+    public class Session : J1979.ISO15765.Session
     {
         public Session(J2534.Device Device) : base(Device)
         {
 
         }
-        public override void InitializeDefaults()
+        public ServiceResult Mode10(Subfunctions.Mode10 Subfunction, bool SuppressPositiveResponse = false)
         {
-            base.InitializeDefaults();
-            for (int i = 0; i < 8; i++)
-                Channel.StartMsgFilter(new J2534.MessageFilter(J2534.UserFilterType.STANDARDISO15765,
-                                                               new byte[4] { 0x00, 0x00, 0x07, (byte)(0xE0 + i) }));
-            Channel.SetConfig(J2534.Parameter.LOOP_BACK, 0);
+            return ISOserviceHandler((byte)Mode.DiagnosticSessionControl, 1, new byte[] { (byte)Subfunction }, SuppressPositiveResponse);
+        }
+        protected ServiceResult ISOserviceHandler(byte Mode, int NumOfParams, IEnumerable<byte> Data, bool SuppressPositiveResponse)
+        {
+            if (SuppressPositiveResponse)
+                Mode |= 0x80;
+            else
+                Mode &= 0x7F;
+
+            return serviceHandler(Mode, NumOfParams, Data);
         }
     }
 }

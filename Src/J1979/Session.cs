@@ -42,7 +42,7 @@ namespace SAE.J1979
         {
             Channel.ClearMsgFilters();
             Channel.ClearPeriodicMsgs();
-            Channel.ClearFunctMsgLookupTable();
+            //Channel.ClearFunctMsgLookupTable();
             Channel.ClearRxBuffer();
             Channel.ClearTxBuffer();
         }
@@ -132,7 +132,7 @@ namespace SAE.J1979
             var Message = header.Tx.ConcatByte(Mode);
             if (Data != null) Message = Message.Concat(Data);
 
-            var ResponseQuery = queryCache.Resolve(Mode, () => rxQueue.GetEnumerable(300, true).DecueueWhere(successPredicate(Mode)));
+            var ResponseQuery = queryCache.Resolve(Mode, () => rxQueue.GetEnumerable(250, true).DecueueWhere(successPredicate(Mode)));
 
             lock (ResponseQuery)
             {
@@ -144,7 +144,7 @@ namespace SAE.J1979
 
                 if (Response != null) return new ServiceResult(new ArraySegment<byte>(Response.Data, Offset, Response.Data.Length - Offset).ToArray());
 
-                Response = rxQueue.GetEnumerable(0).DecueueWhere(failPredicate(Mode)).FirstOrDefault();
+                Response = rxQueue.DecueueWhere(failPredicate(Mode)).FirstOrDefault();
 
                 if (Response != null) return new ServiceResult((Response)Response.Data.Last());
             }

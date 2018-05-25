@@ -230,10 +230,10 @@ namespace SAE.J2190
     public class RapidPacketList
     {
         PID[] PayloadList;
-        public IEnumerable<byte[]> Mode2ADefinitions()
-        {
-
-        }
+        //public IEnumerable<byte[]> Mode2ADefinitions()
+        //{
+        //    return new byte[] { 0x00 };
+        //}
     }
     public enum DiagRoutine
     {
