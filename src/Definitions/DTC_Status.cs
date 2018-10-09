@@ -1,6 +1,7 @@
-﻿#region License
+﻿#region Copyright
 /* Copyright(c) 2018, Brian Humlicek
  * https://github.com/BrianHumlicek
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
@@ -9,7 +10,7 @@
  * furnished to do so, subject to the following conditions:
  * The above copyright notice and this permission notice shall be included in all
  * copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -18,30 +19,21 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-#endregion
+ #endregion
 using System;
-using System.Collections.Generic;
 
-namespace SAE.J1979.ISO14229
+namespace SAE.J1979
 {
-    public class Session : J1979.ISO15765.Session
+    [Flags]
+    public enum DTC_Status
     {
-        public Session(J2534.Device Device) : base(Device)
-        {
-
-        }
-        public ServiceResult Mode10(Subfunctions.Mode10 Subfunction, bool SuppressPositiveResponse = false)
-        {
-            return ISOserviceHandler((byte)Mode.DiagnosticSessionControl, 1, new byte[] { (byte)Subfunction }, SuppressPositiveResponse);
-        }
-        protected ServiceResult ISOserviceHandler(byte Mode, int NumOfParams, IEnumerable<byte> Data, bool SuppressPositiveResponse)
-        {
-            if (SuppressPositiveResponse)
-                Mode |= 0x80;
-            else
-                Mode &= 0x7F;
-
-            return serviceHandler(Mode, NumOfParams, Data);
-        }
+        IMMATURE = 0x01,    //0 Maturing/intermittent code - insufficient data to consider as a malfunction
+        OCCURING_NOW = 0x02,    //Current code - present at time of request
+        OEM_FLAG1 = 0x04,   //Manufacturer specific status
+        OEM_FLAG2 = 0x08,   //Manufacturer specific status
+        STORED = 0x10,  //Stored trouble code
+        PASSING = 0x20, //Warning lamp was previously illuminated for this code, malfunction not currently detected, code not yet erased
+        PENDING = 0x40, //Warning lamp pending for this code, not illuminate but malfunction was detected
+        MIL_ON = 0x80   //Warning lamp illuminated for this code
     }
 }

@@ -20,40 +20,29 @@
  * SOFTWARE.
  */
  #endregion
-using System.Collections.Generic;
+using Common.Extensions;
 
-namespace Common.Extensions
+namespace SAE.J1979.ISO15765
 {
-    public static class Extensions
+    public class Header : IHeader
     {
-        public static byte Byte0(this int Integer32)
+        private byte[] tx;
+        private byte[] rx;
+        public Header(int Target = 0x7E0)
         {
-            return (byte)Integer32;
+            this.Target = Target;
         }
-        public static byte Byte1(this int Integer32)
+        public int Target
         {
-            return (byte)(Integer32 >> 8);
-        }
-        public static byte Byte2(this int Integer32)
-        {
-            return (byte)(Integer32 >> 16);
-        }
-        public static byte Byte3(this int Integer32)
-        {
-            return (byte)(Integer32 >> 24);
-        }
-        public static bool IsBitSet(this byte InByte, int Bit)
-        {
-            if (((InByte >> Bit) & 1) == 1) return true;
-            return false;
-        }
-        public static IEnumerable<byte>ConcatByte(this IEnumerable<byte> Enumerable, byte Byte)
-        {
-            foreach(var EnumerableByte in Enumerable)
+            set
             {
-                yield return EnumerableByte;
+                int Source = value + 0x08;
+                tx = new byte[4] { 0x00, 0x00, value.Byte1(), value.Byte0() };
+                rx = new byte[4] { 0x00, 0x00, Source.Byte1(), Source.Byte0() };
             }
-            yield return Byte;
         }
+        public int MaxLength => 4;
+        public byte[] Rx => rx;
+        public byte[] Tx => tx;
     }
 }

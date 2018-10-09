@@ -20,40 +20,11 @@
  * SOFTWARE.
  */
  #endregion
-using System.Collections.Generic;
+using System;
 
-namespace Common.Extensions
+namespace SAE.J1979.J1850
 {
-    public static class Extensions
+    class VPW_Session : Session
     {
-        public static byte Byte0(this int Integer32)
-        {
-            return (byte)Integer32;
-        }
-        public static byte Byte1(this int Integer32)
-        {
-            return (byte)(Integer32 >> 8);
-        }
-        public static byte Byte2(this int Integer32)
-        {
-            return (byte)(Integer32 >> 16);
-        }
-        public static byte Byte3(this int Integer32)
-        {
-            return (byte)(Integer32 >> 24);
-        }
-        public static bool IsBitSet(this byte InByte, int Bit)
-        {
-            if (((InByte >> Bit) & 1) == 1) return true;
-            return false;
-        }
-        public static IEnumerable<byte>ConcatByte(this IEnumerable<byte> Enumerable, byte Byte)
-        {
-            foreach(var EnumerableByte in Enumerable)
-            {
-                yield return EnumerableByte;
-            }
-            yield return Byte;
-        }
     }
 }

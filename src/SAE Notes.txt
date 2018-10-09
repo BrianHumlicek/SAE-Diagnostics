@@ -1,0 +1,17 @@
+﻿To understand the inheritence heirarchy of the SAE-Diagnostics project, a brief history of SAE standards is necessary.
+
+Everything begins with SAE J1979.  This was the original OBD-II standard.  This standard completely defines modes 0-9.  These modes should behave the same across all vehicles.  This basic functionality is contained in the abstract J1979 session.  This is then extended by the network layers ISO15765 and J1850.  ISO15765 is a transport layer specification for CAN.  The ISO15765 session can be used to do standard J1979 communication over CAN.  The J1850 specification allows for multiple physical layers.  Each of these physical layers has a session object that can be used to do standard J1979 over its respective physical layer.
+
+Next came SAE J2190.  This was an abstract boilerplate for manufacturer specific extensions to J1979.  Because this specification doesn't completely specify the protocol, each manufacturer requires a specific extension for thewir implentation.  These are contained in the J2190 namespace and are extensions of their relevant J1850 sessions, or the ISO15765 session.
+
+Finally there was ISO14229.  This became the final chapter of J2190 by completely defining the extended protocol.  It only allows for CAN physical layer using ISO15765.  Because the definition was complete, there are no more manufacturer specific extensions to implement it.  It is standard across all manufacturers.
+
+SAE J1979--|-- J1850--|-- J1850PWM--(basic J1979 over J1850PWM)--SAE 2190--(Manufacturer specific J2190 over PWM)
+           |          |-- J1850VPW--(basic J1979 over J1850VPW)--SAE 2190--(Manufacturer specific J2190 over VPW)
+           |          |-- ISO9141--(basic J1979 over ISO9141)--SAE 2190--(Manufacturer specific J2190 over ISO)
+		   |
+		   |-- IS015765--|--(basic J1979 over CAN via ISO15765)--SAE 2190--(Manufacturer specific J2190 over CAN via ISO15765)
+		                 |
+						 |--ISO14229--(ISO14229 over CAN via ISO15765)
+
+SCI is a bastard of Chrysler that initially didnt follow any standard.  Eventually, SCI implemented something that looked like J2190.

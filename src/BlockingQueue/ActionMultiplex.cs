@@ -22,53 +22,48 @@
  #endregion
 using System;
 using System.Threading;
+using Common;
 
-using RealtimeQueue;
-
-namespace SAE.J1979
+namespace BlockingQueue
 {
-    public class SessionChannel : Common.LiteDisposable
+    internal class ActionMultiplex
     {
-        private Common.BoolInterlock initOneShot = new Common.BoolInterlock();
-        private EventWaitHandle initWaiter = new EventWaitHandle(false, EventResetMode.ManualReset);
-        public int References;
-        public J2534.Channel Channel { get; }
-        public RealtimeQueue<J2534.Message> RxQueue { get; }
-        public SessionChannel(J2534.Channel Channel)
+        private bool PropagateExceptions;
+        private BoolInterlock Interlock = new BoolInterlock();
+        private Exception MultiplexException;
+        private EventWaitHandle MultiplexWaitHandle = new EventWaitHandle(false, EventResetMode.ManualReset);
+        private Action EventAction;
+
+        public ActionMultiplex(Action EventAction, bool PropagateExceptions = false)
         {
-            this.Channel = Channel;
-            RxQueue = new RealtimeQueue<J2534.Message>(new Action(() =>
-            {
-                RxQueue.AddRange(Channel.GetMessages(200, 0).Messages);
-            }));
+            this.EventAction = EventAction;
+            this.PropagateExceptions = PropagateExceptions;
         }
-        public bool IsInitialized
+
+        public void Invoke()
         {
-            get
+            if (Interlock.Enter())
             {
-                if (initOneShot.Enter()) return false;
-                initWaiter.WaitOne();
-                return true;
-            }
-            set
-            {
-                if (value == true)
+                try
                 {
-                    initWaiter.Set();
+                    EventAction.Invoke();
                 }
-                else
+                catch (Exception ActionExcpetion)
                 {
-                    initWaiter.Reset();
-                    initOneShot.Exit();
+                    MultiplexException = ActionExcpetion;
+                    throw;
+                }
+                finally
+                {
+                    MultiplexException = null;
+                    MultiplexWaitHandle.Set();
+                    Interlock.Exit();
                 }
             }
-        }
-        protected override void DisposeManaged()
-        {
-            if (References == 0)
+            else
             {
-                RxQueue.Dispose();
-                Channel.Dispose();
+                MultiplexWaitHandle.WaitOne();
+                if (MultiplexException != null && PropagateExceptions) throw MultiplexException;
             }
         }
     }

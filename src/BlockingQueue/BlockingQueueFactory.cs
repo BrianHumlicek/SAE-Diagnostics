@@ -20,40 +20,23 @@
  * SOFTWARE.
  */
  #endregion
+using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading;
+using System.Collections.Concurrent;
+using SAE.J2534;
 
-namespace Common.Extensions
+namespace BlockingQueue
 {
-    public static class Extensions
+    public class BlockingQueueFactory
     {
-        public static byte Byte0(this int Integer32)
+        static ConcurrentDictionary<int, BlockingLinkedList<Message>> cache = new ConcurrentDictionary<int, BlockingLinkedList<Message>>();
+
+        public static BlockingLinkedList<Message> GetBlockingQueue()
         {
-            return (byte)Integer32;
-        }
-        public static byte Byte1(this int Integer32)
-        {
-            return (byte)(Integer32 >> 8);
-        }
-        public static byte Byte2(this int Integer32)
-        {
-            return (byte)(Integer32 >> 16);
-        }
-        public static byte Byte3(this int Integer32)
-        {
-            return (byte)(Integer32 >> 24);
-        }
-        public static bool IsBitSet(this byte InByte, int Bit)
-        {
-            if (((InByte >> Bit) & 1) == 1) return true;
-            return false;
-        }
-        public static IEnumerable<byte>ConcatByte(this IEnumerable<byte> Enumerable, byte Byte)
-        {
-            foreach(var EnumerableByte in Enumerable)
-            {
-                yield return EnumerableByte;
-            }
-            yield return Byte;
+            return cache.GetOrAdd(Thread.CurrentThread.ManagedThreadId, new BlockingLinkedList<Message>());
         }
     }
 }

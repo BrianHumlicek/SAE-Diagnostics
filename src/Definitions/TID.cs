@@ -20,40 +20,22 @@
  * SOFTWARE.
  */
  #endregion
-using System.Collections.Generic;
-
-namespace Common.Extensions
+namespace SAE.J1979
 {
-    public static class Extensions
+    /// <summary>
+    /// Oxygen sensor test ID
+    /// </summary>
+    public enum TID : byte
     {
-        public static byte Byte0(this int Integer32)
-        {
-            return (byte)Integer32;
-        }
-        public static byte Byte1(this int Integer32)
-        {
-            return (byte)(Integer32 >> 8);
-        }
-        public static byte Byte2(this int Integer32)
-        {
-            return (byte)(Integer32 >> 16);
-        }
-        public static byte Byte3(this int Integer32)
-        {
-            return (byte)(Integer32 >> 24);
-        }
-        public static bool IsBitSet(this byte InByte, int Bit)
-        {
-            if (((InByte >> Bit) & 1) == 1) return true;
-            return false;
-        }
-        public static IEnumerable<byte>ConcatByte(this IEnumerable<byte> Enumerable, byte Byte)
-        {
-            foreach(var EnumerableByte in Enumerable)
-            {
-                yield return EnumerableByte;
-            }
-            yield return Byte;
-        }
+        Rich2LeanThresholdVoltage = 0x01,
+        Lean2RichThresholdVoltage = 0x02,
+        LovVoltageForSwitchTime = 0x03,
+        HighVoltageForSwitchTime = 0x04,
+        Rich2LeanSwitchTime = 0x05,
+        Lean2RichSwitchTime = 0x06,
+        MinVoltageForTest = 0x07,
+        MaxVoltageForTest = 0x08,
+        TransitionTime = 0x09,
+        Period = 0x0A
     }
 }

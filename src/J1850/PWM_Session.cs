@@ -20,40 +20,34 @@
  * SOFTWARE.
  */
  #endregion
-using System.Collections.Generic;
-
-namespace Common.Extensions
+namespace SAE.J1979.J1850
 {
-    public static class Extensions
+    public class PWM_Session : Session
     {
-        public static byte Byte0(this int Integer32)
+        protected override SessionChannel sessionChannel { get; }
+        public PWM_Session(J2534.Device Device)
         {
-            return (byte)Integer32;
-        }
-        public static byte Byte1(this int Integer32)
-        {
-            return (byte)(Integer32 >> 8);
-        }
-        public static byte Byte2(this int Integer32)
-        {
-            return (byte)(Integer32 >> 16);
-        }
-        public static byte Byte3(this int Integer32)
-        {
-            return (byte)(Integer32 >> 24);
-        }
-        public static bool IsBitSet(this byte InByte, int Bit)
-        {
-            if (((InByte >> Bit) & 1) == 1) return true;
-            return false;
-        }
-        public static IEnumerable<byte>ConcatByte(this IEnumerable<byte> Enumerable, byte Byte)
-        {
-            foreach(var EnumerableByte in Enumerable)
+            sessionChannel = SessionChannelFactory.GetSessionChannel(Device, J2534.Protocol.J1850PWM, J2534.Baud.J1850PWM, J2534.ConnectFlag.NONE);
+            if (!sessionChannel.IsInitialized)
             {
-                yield return EnumerableByte;
+                InitializeDefaults();
+                sessionChannel.IsInitialized = true;
             }
-            yield return Byte;
+        }
+        public override void InitializeDefaults()
+        {
+            base.InitializeDefaults();
+            header.K_bit = false;
+            header.Priority = 6;
+            Channel.AddToFunctMsgLookupTable(0x6B);
+            Channel.SetConfig(J2534.Parameter.NODE_ADDRESS, header.Source);
+            Channel.StartMsgFilter(new J2534.MessageFilter()
+            {
+                Mask = new byte[] { 0x00, 0xFF, 0x00 },
+                Pattern = new byte[] { 0x00, (byte)header.Source, 0x00 },
+                FilterType = J2534.Filter.PASS_FILTER
+            });
+
         }
     }
 }

@@ -1,6 +1,7 @@
-﻿#region License
+﻿#region Copyright
 /* Copyright(c) 2018, Brian Humlicek
  * https://github.com/BrianHumlicek
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
@@ -9,7 +10,7 @@
  * furnished to do so, subject to the following conditions:
  * The above copyright notice and this permission notice shall be included in all
  * copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -18,14 +19,14 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-#endregion
+ #endregion
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
 using Common.Extensions;
 
-namespace SAE.J2190
+namespace SAE.J1979.J2190
 {
     public class FordPWMSession : J1979.J1850.PWM_Session
     {
@@ -111,7 +112,7 @@ namespace SAE.J2190
         /// <returns></returns>
         public ServiceResult Mode23(int Address)
         {
-            return serviceHandler((byte)Mode.DATA_BY_ADDRESS, 2, new byte[] { Address.Byte2(), Address.Byte1(), Address.Byte0() });
+            return serviceTransaction((byte)Mode.DATA_BY_ADDRESS, 2, new byte[] { Address.Byte2(), Address.Byte1(), Address.Byte0() });
         }
         /// <summary>
         /// Request security access
@@ -124,7 +125,7 @@ namespace SAE.J2190
             IEnumerable<byte> Data = new byte[] { Step };
             if (Keys != null) Data = Data.Concat(Keys);
 
-            return serviceHandler((byte)Mode.REQ_SECURITY_ACCESS, 1, Data);
+            return serviceTransaction((byte)Mode.REQ_SECURITY_ACCESS, 1, Data);
         }
         /// <summary>
         /// Start diagnostic routine
@@ -137,7 +138,7 @@ namespace SAE.J2190
             IEnumerable<byte> Data = new byte[] { (byte)Routine };
             if (RoutineData != null) Data = Data.Concat(RoutineData);
 
-            return serviceHandler((byte)Mode.START_DIAG_ROUTINE_BY_NUMBER, 1, Data);
+            return serviceTransaction((byte)Mode.START_DIAG_ROUTINE_BY_NUMBER, 1, Data);
         }
         /// <summary>
         /// Stop diagnostic routine
@@ -146,7 +147,7 @@ namespace SAE.J2190
         /// <returns></returns>
         public ServiceResult Mode32(DiagRoutine Routine)
         {
-            return serviceHandler((byte)Mode.STOP_DIAG_ROUTINE_BY_NUMBER, 1, new byte[] { (byte)Routine });
+            return serviceTransaction((byte)Mode.STOP_DIAG_ROUTINE_BY_NUMBER, 1, new byte[] { (byte)Routine });
         }
         /// <summary>
         /// Request tool to module transfer
@@ -156,7 +157,7 @@ namespace SAE.J2190
         /// <returns></returns>
         public ServiceResult Mode34(int Length, int Address)
         {
-            return serviceHandler((byte)Mode.REQ_DOWNLOAD, 2, new byte[] { 0x80 /*Only format 0x80 is supported*/, Length.Byte1(), Length.Byte0(), Address.Byte2(), Address.Byte1(), Address.Byte0() });
+            return serviceTransaction((byte)Mode.REQ_DOWNLOAD, 2, new byte[] { 0x80 /*Only format 0x80 is supported*/, Length.Byte1(), Length.Byte0(), Address.Byte2(), Address.Byte1(), Address.Byte0() });
         }
         /// <summary>
         /// Request module to tool transfer
@@ -166,7 +167,7 @@ namespace SAE.J2190
         /// <returns></returns>
         public ServiceResult Mode35(int Length, int Address)
         {
-            return serviceHandler((byte)Mode.REQ_UPLOAD, 2, new byte[] { 0x80, Length.Byte1(), Length.Byte0(), Address.Byte2(), Address.Byte1(), Address.Byte0() });
+            return serviceTransaction((byte)Mode.REQ_UPLOAD, 2, new byte[] { 0x80, Length.Byte1(), Length.Byte0(), Address.Byte2(), Address.Byte1(), Address.Byte0() });
         }
         /// <summary>
         /// Data transfer receive
@@ -189,13 +190,13 @@ namespace SAE.J2190
         /// Data transfer transmit
         /// </summary>
         /// <param name="Data">Data to send</param>
-        public void Mode36(ArraySegment<byte>[] Data)
+        public void Mode36(IEnumerable<ArraySegment<byte>> Data)
         {
             Channel.SendMessages(Data.Select(dat => header.Tx.ConcatByte((byte)Mode.DATA_TRANSFER).Concat(dat)).ToArray());
         }
         public ServiceResult Mode37()
         {
-            return serviceHandler((byte)Mode.TRANSFER_ROUTINE_EXIT, 1, new byte[] { 0x80 });
+            return serviceTransaction((byte)Mode.TRANSFER_ROUTINE_EXIT, 1, new byte[] { 0x80 });
         }
         public ServiceResult Mode2A(IEnumerable<byte[]> PacketList)
         {

@@ -1,6 +1,7 @@
-﻿#region License
+﻿#region Copyright
 /* Copyright(c) 2018, Brian Humlicek
  * https://github.com/BrianHumlicek
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
@@ -9,7 +10,7 @@
  * furnished to do so, subject to the following conditions:
  * The above copyright notice and this permission notice shall be included in all
  * copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -19,35 +20,46 @@
  * SOFTWARE.
  */
 #endregion
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
- namespace SAE.J1979.J1850
+namespace BlockingQueue
 {
-    public class PWM_Session : Session
+    public class BlockingLinkedList<T> : LinkedList<T>
     {
-        protected override SessionChannel sessionChannel { get; }
-        public PWM_Session(J2534.Device Device)
-        {
-            sessionChannel = SessionChannelFactory.GetSessionChannel(Device, J2534.Protocol.J1850PWM, J2534.Baud.J1850PWM, J2534.ConnectFlag.NONE);
-            if (!sessionChannel.IsInitialized)
-            {
-                InitializeDefaults();
-                sessionChannel.IsInitialized = true;
-            }
-        }
-        public override void InitializeDefaults()
-        {
-            base.InitializeDefaults();
-            header.K_bit = false;
-            header.Priority = 6;
-            Channel.AddToFunctMsgLookupTable(0x6B);
-            Channel.SetConfig(J2534.Parameter.NODE_ADDRESS, header.Source);
-            Channel.StartMsgFilter(new J2534.MessageFilter()
-            {
-                Mask = new byte[] { 0x00, 0xFF, 0x00 },
-                Pattern = new byte[] { 0x00, (byte)header.Source, 0x00 },
-                FilterType = J2534.Filter.PASS_FILTER
-            });
+        public BlockingLinkedList() : base() { }
+        public BlockingLinkedList(IEnumerable<T> enumerable) : base(enumerable) { }
 
+        public IEnumerable<T> GetBlockingEnumerable(int blockingTimeout = 0)
+        {
+            var blockingTimer = new System.Diagnostics.Stopwatch();
+            blockingTimer.Start();
+            do
+            {
+                //Get a message for 10ms
+                var node = First;
+                while (node != null)
+                {
+                    yield return node.Value;
+                    node = node.Next;
+                }
+
+            } while (blockingTimer.ElapsedMilliseconds < blockingTimeout);
+        }
+    }
+    public static class BlockingLinkedlistIEnumerableExtension
+    {
+        public static IEnumerable<T> ConsumeFrom<T>(this IEnumerable<T> enumerable, BlockingLinkedList<T> queue)
+        {
+            foreach (T obj in enumerable)
+            {
+                queue.Remove(obj);
+                yield return obj;
+            }
         }
     }
 }

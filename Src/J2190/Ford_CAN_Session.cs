@@ -1,9 +1,31 @@
-﻿using System;
+﻿#region Copyright
+/* Copyright(c) 2018, Brian Humlicek
+ * https://github.com/BrianHumlicek
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sub-license, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+ #endregion
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Common.Extensions;
 
-namespace SAE.J2190
+namespace SAE.J1979.J2190
 {
     public class Ford_CAN_Session : J1979.ISO15765.Session
     {
@@ -36,7 +58,7 @@ namespace SAE.J2190
         {
             try
             {
-                return serviceHandler((byte)Mode.INITIATE_DIAG_OP, 1, new byte[] { (byte)SessionState });
+                return serviceTransaction((byte)Mode.INITIATE_DIAG_OP, 1, new byte[] { (byte)SessionState });
             }
             catch
             {
@@ -52,16 +74,16 @@ namespace SAE.J2190
         public ServiceResult Mode11(int Address)
         {
             throw new NotImplementedException();
-            return serviceHandler((byte)Mode.DATA_BY_ADDRESS, 2, new byte[] { Address.Byte3(), Address.Byte2(), Address.Byte1(), Address.Byte0() });
+            return serviceTransaction((byte)Mode.DATA_BY_ADDRESS, 2, new byte[] { Address.Byte3(), Address.Byte2(), Address.Byte1(), Address.Byte0() });
         }
         /// <summary>
         /// Request data by memory address
         /// </summary>
         /// <param name="Address">Address (24bit)</param>
         /// <returns></returns>
-        public ServiceResult Mode23(int Address)
+        public ServiceResult Mode23(int Address, int Length)
         {
-            return serviceHandler((byte)Mode.DATA_BY_ADDRESS, 2, new byte[] { Address.Byte3(), Address.Byte2(), Address.Byte1(), Address.Byte0() });
+            return serviceTransaction((byte)Mode.DATA_BY_ADDRESS, 2, new byte[] { Address.Byte3(), Address.Byte2(), Address.Byte1(), Address.Byte0(), Length.Byte1(), Length.Byte0() });
         }
         /// <summary>
         /// Request security access
@@ -74,7 +96,7 @@ namespace SAE.J2190
             IEnumerable<byte> Data = new byte[] { Step };
             if (Keys != null) Data = Data.Concat(Keys);
 
-            return serviceHandler((byte)Mode.REQ_SECURITY_ACCESS, 1, Data);
+            return serviceTransaction((byte)Mode.REQ_SECURITY_ACCESS, 1, Data);
         }
         /// <summary>
         /// Start diagnostic routine
@@ -87,7 +109,7 @@ namespace SAE.J2190
             IEnumerable<byte> Data = new byte[] { (byte)Routine };
             if (RoutineData != null) Data = Data.Concat(RoutineData);
 
-            return serviceHandler((byte)Mode.START_DIAG_ROUTINE_BY_NUMBER, 1, Data);
+            return serviceTransaction((byte)Mode.START_DIAG_ROUTINE_BY_NUMBER, 1, Data);
         }
         /// <summary>
         /// Stop diagnostic routine
@@ -96,7 +118,7 @@ namespace SAE.J2190
         /// <returns></returns>
         public ServiceResult Mode32(DiagRoutine Routine)
         {
-            return serviceHandler((byte)Mode.STOP_DIAG_ROUTINE_BY_NUMBER, 1, new byte[] { (byte)Routine });
+            return serviceTransaction((byte)Mode.STOP_DIAG_ROUTINE_BY_NUMBER, 1, new byte[] { (byte)Routine });
         }
         /// <summary>
         /// Request tool to module transfer
@@ -104,9 +126,9 @@ namespace SAE.J2190
         /// <param name="Length">Length in bytes of transfer</param>
         /// <param name="Address">Starting address of transfer block</param>
         /// <returns></returns>
-        public ServiceResult Mode34(int Length, int Address)
+        public ServiceResult Mode34(int Address, int Length)
         {
-            return serviceHandler((byte)Mode.REQ_DOWNLOAD, 2, new byte[] { 0x80 /*Only format 0x80 is supported*/, Length.Byte1(), Length.Byte0(), Address.Byte2(), Address.Byte1(), Address.Byte0() });
+            return serviceTransaction((byte)Mode.REQ_DOWNLOAD, 2, new byte[] { 0x80 /*Only format 0x80 is supported*/, Length.Byte1(), Length.Byte0(), Address.Byte2(), Address.Byte1(), Address.Byte0() });
         }
         /// <summary>
         /// Request module to tool transfer
@@ -114,9 +136,9 @@ namespace SAE.J2190
         /// <param name="Length">Length in bytes of transfer</param>
         /// <param name="Address">Starting address of transfer block</param>
         /// <returns></returns>
-        public ServiceResult Mode35(int Length, int Address)
+        public ServiceResult Mode35(int Address, int Length)
         {
-            return serviceHandler((byte)Mode.REQ_UPLOAD, 2, new byte[] { 0x80, Length.Byte1(), Length.Byte0(), Address.Byte2(), Address.Byte1(), Address.Byte0() });
+            return serviceTransaction((byte)Mode.REQ_UPLOAD, 2, new byte[] { 0x80, Length.Byte1(), Length.Byte0(), Address.Byte2(), Address.Byte1(), Address.Byte0() });
         }
         /// <summary>
         /// Data transfer receive
@@ -145,7 +167,7 @@ namespace SAE.J2190
         }
         public ServiceResult Mode37()
         {
-            return serviceHandler((byte)Mode.TRANSFER_ROUTINE_EXIT, 1, new byte[] { 0x80 });
+            return serviceTransaction((byte)Mode.TRANSFER_ROUTINE_EXIT, 1, new byte[] { 0x80 });
         }
         public ServiceResult ModeA0(IEnumerable<byte[]> PacketList)
         {
