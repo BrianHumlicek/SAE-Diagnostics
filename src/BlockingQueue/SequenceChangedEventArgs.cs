@@ -19,10 +19,18 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
- #endregion
-namespace SAE.J1979.J1850
+#endregion
+namespace SAE.BlockingQueue
 {
-    class ISO9141_Session : Session
+    public partial class BlockingQueue<T>
     {
+        protected struct SequenceChangedEventArgs
+        {
+            public BlockingQueueNode UpdatedNextNode { get; set; }
+            public SequenceChangedEventArgs(BlockingQueueNode UpdatedNextNode)
+            {
+                this.UpdatedNextNode = UpdatedNextNode;
+            }
+        }
     }
 }

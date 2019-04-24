@@ -27,34 +27,47 @@ namespace SAE.J1979
 {
     public class ServiceResult
     {
-        public Response Response { get; }
+        public ExitCode ExitCode { get; }
         public IList<byte> Data { get; }
-        public ServiceResult(Response Response)
+        public ServiceResult(ExitCode ExitCode)
         {
-            this.Response = Response;
+            this.ExitCode = ExitCode;
             Data = new ArraySegment<byte>();
         }
         public ServiceResult(ArraySegment<byte> Data)
         {
-            Response = Response.NONE;
+            ExitCode = ExitCode.NONE;
             this.Data = Data;
         }
-        public ServiceResult(Response Response, ArraySegment<byte> Data)
+        public ServiceResult(ExitCode ExitCode, ArraySegment<byte> Data)
         {
-            this.Response = Response;
+            this.ExitCode = ExitCode;
             this.Data = Data;
         }
-        public ServiceResult CheckResponse(string FailureMessage, Response ExpectedResponse = Response.NONE)
+        /// <summary>
+        /// Checks the response exit code to the expected exit code.  Throws an exception if they don't match.
+        /// </summary>
+        /// <param name="FailureMessage">Message to include in the exception</param>
+        /// <param name="ExpectedExitCode">Exit code to test for</param>
+        /// <returns></returns>
+        public ServiceResult CheckExitCode(string FailureMessage, ExitCode ExpectedExitCode = ExitCode.NONE)
         {
-            if (Response != ExpectedResponse)
+            if (ExitCode != ExpectedExitCode)
             {
                 //throw new FordDiagnosticException(Result.Response, FailureMessage, Result.Data);
             }
             return this;
         }
-        public ServiceResult CheckData(string FailureMessage, Response ExpectedResponse = Response.AFFIRMITIVE_RESPONSE)
+
+        /// <summary>
+        /// Compares the first data byte to the expected exit code.  Throws an exception if they don't match
+        /// </summary>
+        /// <param name="FailureMessage">Message to include in the exception</param>
+        /// <param name="ExpectedExitCode">Exit code to test for</param>
+        /// <returns></returns>
+        public ServiceResult CheckData(string FailureMessage, ExitCode ExpectedExitCode = ExitCode.AFFIRMITIVE_RESPONSE)
         {
-            if ((Data?.Count ?? 0) < 1 || Data[0] != (byte)ExpectedResponse)
+            if ((Data?.Count ?? 0) < 1 || Data[0] != (byte)ExpectedExitCode)
             {
                 //throw new FordDiagnosticException(Result.Response, FailureMessage, Result.Data);
             }

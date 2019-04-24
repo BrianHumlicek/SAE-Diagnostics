@@ -29,7 +29,7 @@ namespace RealtimeQueue
 {
     public partial class RealtimeQueue<T>
     {
-        public class RealtimeQueueEnumerator<EnumeratorT> : Common.LiteDisposable, IEnumerator<EnumeratorT>
+        public class RealtimeQueueEnumerator<EnumeratorT> : Common.ManagedDisposable, IEnumerator<EnumeratorT>
         {
             private RealtimeQueue<EnumeratorT>.RealtimeQueueNode currentNode;
             private bool useBookmark;

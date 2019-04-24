@@ -20,34 +20,29 @@
  * SOFTWARE.
  */
  #endregion
-namespace SAE.J1979.J1850
-{
-    public class PWM_Session : Session
-    {
-        protected override SessionChannel sessionChannel { get; }
-        public PWM_Session(J2534.Device Device)
-        {
-            sessionChannel = SessionChannelFactory.GetSessionChannel(Device, J2534.Protocol.J1850PWM, J2534.Baud.J1850PWM, J2534.ConnectFlag.NONE);
-            if (!sessionChannel.IsInitialized)
-            {
-                InitializeDefaults();
-                sessionChannel.IsInitialized = true;
-            }
-        }
-        public override void InitializeDefaults()
-        {
-            base.InitializeDefaults();
-            header.K_bit = false;
-            header.Priority = 6;
-            Channel.AddToFunctMsgLookupTable(0x6B);
-            Channel.SetConfig(J2534.Parameter.NODE_ADDRESS, header.Source);
-            Channel.StartMsgFilter(new J2534.MessageFilter()
-            {
-                Mask = new byte[] { 0x00, 0xFF, 0x00 },
-                Pattern = new byte[] { 0x00, (byte)header.Source, 0x00 },
-                FilterType = J2534.Filter.PASS_FILTER
-            });
+using System;
+using System.Collections.Generic;
 
+namespace SAE.J1979.ISO15765.ISO14229
+{
+    public class ISO14229Session : ISO15765Session
+    {
+        public ISO14229Session(J2534.Device Device) : base(Device)
+        {
+
+        }
+        public ServiceResult Mode10(Mode10 Subfunction, bool SuppressPositiveResponse = false)
+        {
+            return ISOserviceHandler((byte)Mode.DiagnosticSessionControl, 1, new byte[] { (byte)Subfunction }, SuppressPositiveResponse);
+        }
+        protected ServiceResult ISOserviceHandler(byte Mode, int NumOfParams, IEnumerable<byte> Data, bool SuppressPositiveResponse)
+        {
+            if (SuppressPositiveResponse)
+                Mode |= 0x80;
+            else
+                Mode &= 0x7F;
+
+            return serviceTransaction(Mode, NumOfParams, Data);
         }
     }
 }

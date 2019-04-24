@@ -24,34 +24,38 @@ using System.Collections.Generic;
 
 namespace SAE.J1979
 {
-    internal class SessionChannelFactory
+    public partial class SessionChannel
     {
-        private static Dictionary<string, SessionChannel> ChannelCache = new Dictionary<string, SessionChannel>();
-        public static SessionChannel GetSessionChannel(J2534.Device Device, J2534.Protocol ProtocolID, J2534.Baud Baud, J2534.ConnectFlag Flags)
+        public class Factory
         {
-            string Key = $"{Device}:{ProtocolID}:{Baud}";
-            lock (ChannelCache)
+            private static Dictionary<string, SessionChannel> channelcache = new Dictionary<string, SessionChannel>();
+            public static SessionChannel Create(J2534.Device Device, J2534.Protocol ProtocolID, J2534.Baud Baud, J2534.ConnectFlag Flags)
             {
-                SessionChannel result;
-                if (ChannelCache.ContainsKey(Key))
+                string Key = $"{Device}:{ProtocolID}:{Baud}";
+                lock (channelcache)
                 {
-                    result = ChannelCache[Key];
-                }
-                else
-                {
-                    result = new SessionChannel(Device.GetChannel(ProtocolID, Baud, Flags));
-                    ChannelCache[Key] = result;
-                    result.OnDisposing += () =>
+                    SessionChannel result;
+
+                    if (!channelcache.ContainsKey(Key))
                     {
-                        lock (ChannelCache)
+                        var NewChannel = new SessionChannel(Device.GetChannel(ProtocolID, Baud, Flags));
+                        NewChannel.OnDisposing += () =>
                         {
-                            if (result.References-- == 0)
-                                ChannelCache.Remove(Key);
-                        }
-                    };
+                            lock (channelcache)
+                            {
+                                NewChannel.refCount--;
+                                if (NewChannel.refCount < 1)
+                                {
+                                    channelcache.Remove(Key);
+                                }
+                            }
+                        };
+                        channelcache[Key] = NewChannel;
+                    }
+                    result = channelcache[Key];
+                    result.refCount++;
+                    return result;
                 }
-                result.References++;
-                return result;
             }
         }
     }

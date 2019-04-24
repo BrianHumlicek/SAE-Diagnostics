@@ -23,12 +23,15 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-
+using System.Threading;
+using SAE.BlockingQueue;
 using Common.Extensions;
+//using SAE.J1979.J2190.Ford;
+//using SAE.J1979.J2190.Ford.PWM.Definitions;
 
-namespace SAE.J1979.J2190
+namespace SAE.J1979.J2190.Ford.PWM
 {
-    public class FordPWMSession : J1979.J1850.PWM_Session
+    public class FordPWMSession : J1979.J1850.PWMSession
     {
         private byte[] broadcastmessage;
 
@@ -66,9 +69,9 @@ namespace SAE.J1979.J2190
             Channel.ClearRxBuffer();
         }
 
-        public bool BroadcastListen(int Timeout = 200)
+        public bool BroadcastListen()
         {
-            var BroadcastMessages = rxQueue.GetEnumerable(Timeout: 200, BookmarkEnumeration: true).DecueueWhere(msg =>
+            var broadcastMessageFilter = rxQueue.Where(msg =>
             {
                 if (msg.Data.Length < 5) return false;
                 if (msg.Data[1] != 0x05) return false;
@@ -77,9 +80,10 @@ namespace SAE.J1979.J2190
                 if (msg.Data[4] != 0x00) return false;
                 return true;
             });
+
             do
             {
-                broadcastmessage = BroadcastMessages.FirstOrDefault()?.Data;
+                broadcastmessage = broadcastMessageFilter.FirstOrDefault()?.Data;
             } while (broadcastmessage == null);
 
             return true;
@@ -105,6 +109,7 @@ namespace SAE.J1979.J2190
             J2534.PeriodicMessage TesterPresent = new J2534.PeriodicMessage(3000, header.Tx.ConcatByte(0x3F).ToArray(), J2534.TxFlag.NONE);
             Channel.StartPeriodicMessage(TesterPresent);
         }
+
         /// <summary>
         /// Request data by memory address
         /// </summary>
@@ -112,20 +117,20 @@ namespace SAE.J1979.J2190
         /// <returns></returns>
         public ServiceResult Mode23(int Address)
         {
-            return serviceTransaction((byte)Mode.DATA_BY_ADDRESS, 2, new byte[] { Address.Byte2(), Address.Byte1(), Address.Byte0() });
+            return serviceTransaction((byte)J2190Mode.DATA_BY_ADDRESS, 2, new byte[] { Address.Byte2(), Address.Byte1(), Address.Byte0() });
         }
         /// <summary>
         /// Request security access
         /// </summary>
-        /// <param name="Step">Step in sequence</param>
+        /// <param name="Routine">Step in sequence</param>
         /// <param name="Keys">Key bytes (optional)</param>
         /// <returns></returns>
-        public ServiceResult Mode27(byte Step, byte[] Keys = null)
+        public ServiceResult Mode27(SecurityChallenge Routine, byte[] Keys = null)
         {
-            IEnumerable<byte> Data = new byte[] { Step };
+            IEnumerable<byte> Data = new byte[] { (byte)Routine };
             if (Keys != null) Data = Data.Concat(Keys);
 
-            return serviceTransaction((byte)Mode.REQ_SECURITY_ACCESS, 1, Data);
+            return serviceTransaction((byte)J2190Mode.REQ_SECURITY_ACCESS, 1, Data);
         }
         /// <summary>
         /// Start diagnostic routine
@@ -138,7 +143,7 @@ namespace SAE.J1979.J2190
             IEnumerable<byte> Data = new byte[] { (byte)Routine };
             if (RoutineData != null) Data = Data.Concat(RoutineData);
 
-            return serviceTransaction((byte)Mode.START_DIAG_ROUTINE_BY_NUMBER, 1, Data);
+            return serviceTransaction((byte)J2190Mode.START_DIAG_ROUTINE_BY_NUMBER, 1, Data);
         }
         /// <summary>
         /// Stop diagnostic routine
@@ -147,7 +152,7 @@ namespace SAE.J1979.J2190
         /// <returns></returns>
         public ServiceResult Mode32(DiagRoutine Routine)
         {
-            return serviceTransaction((byte)Mode.STOP_DIAG_ROUTINE_BY_NUMBER, 1, new byte[] { (byte)Routine });
+            return serviceTransaction((byte)J2190Mode.STOP_DIAG_ROUTINE_BY_NUMBER, 1, new byte[] { (byte)Routine });
         }
         /// <summary>
         /// Request tool to module transfer
@@ -157,7 +162,7 @@ namespace SAE.J1979.J2190
         /// <returns></returns>
         public ServiceResult Mode34(int Length, int Address)
         {
-            return serviceTransaction((byte)Mode.REQ_DOWNLOAD, 2, new byte[] { 0x80 /*Only format 0x80 is supported*/, Length.Byte1(), Length.Byte0(), Address.Byte2(), Address.Byte1(), Address.Byte0() });
+            return serviceTransaction((byte)J2190Mode.REQ_DOWNLOAD, 2, new byte[] { 0x80 /*Only format 0x80 is supported*/, Length.Byte1(), Length.Byte0(), Address.Byte2(), Address.Byte1(), Address.Byte0() });
         }
         /// <summary>
         /// Request module to tool transfer
@@ -167,7 +172,7 @@ namespace SAE.J1979.J2190
         /// <returns></returns>
         public ServiceResult Mode35(int Length, int Address)
         {
-            return serviceTransaction((byte)Mode.REQ_UPLOAD, 2, new byte[] { 0x80, Length.Byte1(), Length.Byte0(), Address.Byte2(), Address.Byte1(), Address.Byte0() });
+            return serviceTransaction((byte)J2190Mode.REQ_UPLOAD, 2, new byte[] { 0x80, Length.Byte1(), Length.Byte0(), Address.Byte2(), Address.Byte1(), Address.Byte0() });
         }
         /// <summary>
         /// Data transfer receive
@@ -176,13 +181,12 @@ namespace SAE.J1979.J2190
         /// <returns></returns>
         public IEnumerable<ArraySegment<byte>> Mode36(int NumOfMessages)
         {
-            var ResponseQuery = queryCache.Resolve((byte)Mode.DATA_TRANSFER, () => rxQueue.DecueueWhere(successPredicate((byte)Mode.DATA_TRANSFER)));
-
-            lock (ResponseQuery)
-            {
-                var result = ResponseQuery.Take(NumOfMessages).Select(msg => new ArraySegment<byte>(msg.Data, header.Rx.Length + 1, 6)).ToArray();
-                if (result.Length == NumOfMessages) return result;
-            }
+            var result = rxQueue.Where(successMessage((byte)J2190Mode.DATA_TRANSFER))
+                                .Take(NumOfMessages)
+                                .RemoveFrom(rxQueue)
+                                .Select(msg => new ArraySegment<byte>(msg.Data, header.Rx.Length + 1, 6))
+                                .ToArray();
+            if (result.Length == NumOfMessages) return result;
 
             throw new Exception($"Too few messages in block data transfer!");
         }
@@ -192,11 +196,11 @@ namespace SAE.J1979.J2190
         /// <param name="Data">Data to send</param>
         public void Mode36(IEnumerable<ArraySegment<byte>> Data)
         {
-            Channel.SendMessages(Data.Select(dat => header.Tx.ConcatByte((byte)Mode.DATA_TRANSFER).Concat(dat)).ToArray());
+            Channel.SendMessages(Data.Select(dat => header.Tx.ConcatByte((byte)J2190Mode.DATA_TRANSFER).Concat(dat)).ToArray());
         }
         public ServiceResult Mode37()
         {
-            return serviceTransaction((byte)Mode.TRANSFER_ROUTINE_EXIT, 1, new byte[] { 0x80 });
+            return serviceTransaction((byte)J2190Mode.TRANSFER_ROUTINE_EXIT, 1, new byte[] { 0x80 });
         }
         public ServiceResult Mode2A(IEnumerable<byte[]> PacketList)
         {
@@ -211,23 +215,6 @@ namespace SAE.J1979.J2190
             throw new NotImplementedException();
         }
     }
-    public class PID
-    {
-        public string NGSName { get; }
-        public string Description { get; }
-        public string Units { get; }
-        public int PIDNum { get; }
-        public int DataWidth { get; }
-        public int BPP { get; }
-        public bool Signed { get; }
-        public PID_TYPE Type { get; }
-        public enum PID_TYPE
-        {
-            Offset = 0,
-            PID = 1,
-            DMR = 2
-        }
-    }
     public class RapidPacketList
     {
         PID[] PayloadList;
@@ -235,13 +222,5 @@ namespace SAE.J1979.J2190
         //{
         //    return new byte[] { 0x00 };
         //}
-    }
-    public enum DiagRoutine
-    {
-        IVFEREntry = 0xA0,
-        EraseFlash = 0xA1,
-        WriteFlash = 0xA2,
-        RunChecksum = 0xA3,
-        SetBaudRate = 0xA4
     }
 }

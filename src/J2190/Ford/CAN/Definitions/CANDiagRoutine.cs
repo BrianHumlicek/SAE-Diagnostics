@@ -20,20 +20,15 @@
  * SOFTWARE.
  */
  #endregion
-namespace SAE.J1979
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace SAE.J1979.J2190.Ford.CAN
 {
-    public enum Mode : byte
+    public enum DiagRoutine
     {
-        REQ_DIAG_DATA = 0x01,
-        REQ_FREEZE_FRAME_DATA = 0x02,
-        REQ_EMISSION_DIAG_DATA = 0x03,
-        CLEAR_EMISSION_DIAG_DATA = 0x04,
-        REQ_O2_MON_RESULTS = 0x05,
-        REQ_SYSTEM_MON_RESULTS = 0x06,
-        REQ_CURRENT_DTC = 0x07,
-        REQ_SYSTEM_CTL = 0x08,
-        REQ_VEHICLE_INFO = 0x09,
-        REQ_PERMANENT_EMISSION_DTC = 0x0A,
-        GENERAL_RESPONSE = 0x7F
     }
 }

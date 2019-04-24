@@ -20,23 +20,19 @@
  * SOFTWARE.
  */
  #endregion
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading;
-using System.Collections.Concurrent;
-using SAE.J2534;
 
-namespace BlockingQueue
+namespace SAE.BlockingQueue
 {
-    public class BlockingQueueFactory
+    public static class BlockingQueueExtensions
     {
-        static ConcurrentDictionary<int, BlockingLinkedList<Message>> cache = new ConcurrentDictionary<int, BlockingLinkedList<Message>>();
-
-        public static BlockingLinkedList<Message> GetBlockingQueue()
+        public static IEnumerable<T> RemoveFrom<T>(this IEnumerable<T> enumerable, BlockingQueue<T> BlockingQueue)
         {
-            return cache.GetOrAdd(Thread.CurrentThread.ManagedThreadId, new BlockingLinkedList<Message>());
+            foreach (T obj in enumerable)
+            {
+                BlockingQueue.Remove(obj);
+                yield return obj;
+            }
         }
     }
 }

@@ -23,21 +23,24 @@
 using System;
 using System.Threading;
 
-using RealtimeQueue;
+using SAE.BlockingQueue;
 
 namespace SAE.J1979
 {
-    public class SessionChannel : Common.LiteDisposable
+    //This class provides a mechanism for synchronizing initialization of a channel by potentially competing threads.
+    //Whoever gets there first will initialize it, while the other waits for it to finish.
+    //It also wires up the BlockingQueue
+    public partial class SessionChannel : Common.ManagedDisposable
     {
         private Common.BoolInterlock initOneShot = new Common.BoolInterlock();
         private EventWaitHandle initWaiter = new EventWaitHandle(false, EventResetMode.ManualReset);
-        public int References;
+        private int refCount;
         public J2534.Channel Channel { get; }
-        public RealtimeQueue<J2534.Message> RxQueue { get; }
+        public BlockingQueue<J2534.Message> RxQueue { get; }
         public SessionChannel(J2534.Channel Channel)
         {
             this.Channel = Channel;
-            RxQueue = new RealtimeQueue<J2534.Message>(new Action(() =>
+            RxQueue = new BlockingQueue<J2534.Message>(new Action(() =>
             {
                 RxQueue.AddRange(Channel.GetMessages(200, 0).Messages);
             }));
@@ -46,7 +49,10 @@ namespace SAE.J1979
         {
             get
             {
-                if (initOneShot.Enter()) return false;
+                if (initOneShot.Enter())
+                {
+                    return false;
+                }
                 initWaiter.WaitOne();
                 return true;
             }
@@ -65,9 +71,8 @@ namespace SAE.J1979
         }
         protected override void DisposeManaged()
         {
-            if (References == 0)
+            if (refCount == 0)
             {
-                RxQueue.Dispose();
                 Channel.Dispose();
             }
         }

@@ -24,19 +24,21 @@ using System;
 
 namespace SAE.J1979.J1850
 {
-    public abstract class Session : J1979.Session
+    public abstract class J1850Session : J2190.J2190Session
     {
-        private int source_filter_index = -1;
-        protected Session() : base(new J1850.Header())
+        int source_filter_index = -1;
+
+        protected J1850Session(SessionChannel sessionChannel) : base(new J1850.J1850Header(), sessionChannel)
         {
         }
-        public override void InitializeDefaults()
+
+        protected override void initializeChannel()
         {
-            base.InitializeDefaults();
+            base.initializeChannel();
         }
-        protected new Header header
+        protected new J1850Header header
         {
-            get { return (Header) base.header; }
+            get { return (J1850Header) base.header; }
         }
         public int SourceAddress
         {
@@ -55,37 +57,38 @@ namespace SAE.J1979.J1850
             get { return header.Target; }
             set { header.Target = value; }
         }
-        protected override Predicate<J2534.Message>successPredicate(byte Mode)
+
+        protected override Func<J2534.Message, bool> successMessage(byte Mode)
         {
             if (!header.H_bit)  //3 byte headers
             {
-                return new Predicate<J2534.Message>(Message =>
+                return new Func<J2534.Message, bool>(Message =>
                 {
-                    if ((Message?.Data?.Length ?? 0) > 3 &&
-                        Message.Data[3] == (Mode ^ 0x40) &&
-                        Message.Data[2] == base.header.Rx[2] &&
-                        Message.Data[1] == base.header.Rx[1]) return true;
-                    return false;
+                    return (Message?.Data?.Length ?? 0) > 3
+                           && Message.Data[3] == (Mode ^ 0x40)
+                           && Message.Data[2] == base.header.Rx[2]
+                           && Message.Data[1] == base.header.Rx[1];
                 });
             }
             throw new NotImplementedException("Single byte headers are not yet supported!");
         }
-        protected override Predicate<J2534.Message> failPredicate(byte Mode)
+
+        protected override Func<J2534.Message, bool> failMessage(byte Mode)
         {
             if (!header.H_bit)  //3 byte headers
             {
-                return new Predicate<J2534.Message>(Message =>
+                return new Func<J2534.Message, bool>(Message =>
                 {
-                    if ((Message?.Data?.Length ?? 0) > 4 &&
-                        Message.Data[4] == (byte)Mode &&
-                        Message.Data[3] == (byte)J1979.Mode.GENERAL_RESPONSE &&
-                        Message.Data[2] == base.header.Rx[2] &&
-                        Message.Data[1] == base.header.Rx[1]) return true;
-                    return false;
+                    return (Message?.Data?.Length ?? 0) > 4
+                           && Message.Data[4] == (byte)Mode
+                           && Message.Data[3] == (byte)J1979.J1979Mode.GENERAL_RESPONSE
+                           && Message.Data[2] == base.header.Rx[2]
+                           && Message.Data[1] == base.header.Rx[1];
                 });
             }
             throw new NotImplementedException("Single byte headers are not yet supported!");
         }
+
         protected void setSourceFilter()
         {
             if (source_filter_index != -1)

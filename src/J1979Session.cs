@@ -25,22 +25,25 @@ using System.Collections.Generic;
 using System.Linq;
 using Common.Extensions;
 using RealtimeQueue;
-using BlockingQueue;
+using SAE.BlockingQueue;
 
 namespace SAE.J1979
 {
-    public abstract class Session : Common.LiteDisposable
+    public abstract class J1979Session : Common.ManagedDisposable
     {
-        protected virtual SessionChannel sessionChannel { get; }
-        protected virtual IHeader header { get; }
+        protected SessionChannel sessionChannel { get; }
+        protected IHeader header { get; }
         public J2534.Channel Channel { get { return sessionChannel.Channel; } }
-        protected RealtimeQueue<J2534.Message> rxQueue { get { return sessionChannel.RxQueue; } }
-        protected IEnumerableCache queryCache { get; } = new IEnumerableCache();
-        protected Session(IHeader Header)
+        protected BlockingQueue<J2534.Message> rxQueue { get; }
+
+        protected J1979Session(IHeader header, SessionChannel sessionChannel)
         {
-            header = Header;
+            this.header = header;
+            this.sessionChannel = sessionChannel;
+            rxQueue = sessionChannel.RxQueue.GetConsumingEnumerable();
+            rxQueue.BlockingTimeout = 250;
         }
-        public virtual void InitializeDefaults()
+        protected virtual void initializeChannel()
         {
             Channel.ClearMsgFilters();
             Channel.ClearPeriodicMsgs();
@@ -55,7 +58,7 @@ namespace SAE.J1979
         /// <returns>32bit bitmap of supported PIDs</returns>
         public ServiceResult Mode01(byte PID)
         {
-            return serviceTransaction((byte)Mode.REQ_DIAG_DATA, 1, new byte[] { PID });
+            return serviceTransaction((byte)J1979Mode.REQ_DIAG_DATA, 1, new byte[] { PID });
         }
         /// <summary>
         /// Request powertrain freeze frame data request message definition
@@ -65,7 +68,7 @@ namespace SAE.J1979
         /// <returns>Data record of supported pids</returns>
         public ServiceResult Mode02(byte PID, byte FRNO)
         {
-            return serviceTransaction((byte)Mode.REQ_FREEZE_FRAME_DATA, 2, new byte[] { PID, FRNO });
+            return serviceTransaction((byte)J1979Mode.REQ_FREEZE_FRAME_DATA, 2, new byte[] { PID, FRNO });
         }
         /// <summary>
         /// Request emission-related DTC response message definition
@@ -73,7 +76,7 @@ namespace SAE.J1979
         /// <returns>DTC array</returns>
         public ServiceResult Mode03()
         {
-            return serviceTransaction((byte)Mode.REQ_EMISSION_DIAG_DATA);
+            return serviceTransaction((byte)J1979Mode.REQ_EMISSION_DIAG_DATA);
         }
         /// <summary>
         /// Clear/reset emission-related diagnostic information response SID
@@ -81,7 +84,7 @@ namespace SAE.J1979
         /// <returns>void</returns>
         public ServiceResult Mode04()
         {
-            return serviceTransaction((byte)Mode.CLEAR_EMISSION_DIAG_DATA);
+            return serviceTransaction((byte)J1979Mode.CLEAR_EMISSION_DIAG_DATA);
         }
         /// <summary>
         /// Request oxygen sensor monitoring test results request SID
@@ -91,7 +94,7 @@ namespace SAE.J1979
         /// <returns>Data record of test ID</returns>
         public ServiceResult Mode05(TID TID, O2 O2SNO)
         {
-            return serviceTransaction((byte)Mode.REQ_O2_MON_RESULTS, 2, new byte[] { (byte)TID, (byte)O2SNO });
+            return serviceTransaction((byte)J1979Mode.REQ_O2_MON_RESULTS, 2, new byte[] { (byte)TID, (byte)O2SNO });
         }
         /// <summary>
         /// Request on-board monitoring test results for specific monitored systems request SID
@@ -100,7 +103,7 @@ namespace SAE.J1979
         /// <returns>Data record of test ID</returns>
         public ServiceResult Mode06(byte TID)
         {
-            return serviceTransaction((byte)Mode.REQ_O2_MON_RESULTS, 1, new byte[] { TID });
+            return serviceTransaction((byte)J1979Mode.REQ_O2_MON_RESULTS, 1, new byte[] { TID });
         }
         /// <summary>
         /// Request emission-related diagnostic trouble codes detected during current or last completed driving cycle request SID
@@ -108,7 +111,7 @@ namespace SAE.J1979
         /// <returns>DTC array</returns>
         public ServiceResult Mode07()
         {
-            return serviceTransaction((byte)Mode.REQ_CURRENT_DTC);
+            return serviceTransaction((byte)J1979Mode.REQ_CURRENT_DTC);
         }
         /// <summary>
         /// Request control of on-board device request SID
@@ -118,7 +121,9 @@ namespace SAE.J1979
         /// <returns>Data record of test ID</returns>
         public ServiceResult Mode08(byte TID, byte[] TIDREC)
         {
-            return serviceTransaction((byte)Mode.REQ_SYSTEM_CTL, 1, new byte[] { TID }.Concat(TIDREC));
+            return serviceTransaction(Mode:             (byte)J1979Mode.REQ_SYSTEM_CTL,
+                                      ResultDataOffset: 1,
+                                      Data:             new byte[] { TID }.Concat(TIDREC));
         }
         /// <summary>
         /// Request vehicle information response SID
@@ -127,48 +132,48 @@ namespace SAE.J1979
         /// <returns></returns>
         public ServiceResult Mode09(InfoType INFTYP)
         {
-            return serviceTransaction((byte)Mode.REQ_VEHICLE_INFO, 1, new byte[] { (byte)INFTYP });
+            return serviceTransaction(Mode:             (byte)J1979Mode.REQ_VEHICLE_INFO,
+                                      ResultDataOffset: 1,
+                                      Data:             new byte[] { (byte)INFTYP });
         }
         protected virtual ServiceResult serviceTransaction(byte Mode, int ResultDataOffset = 0, IEnumerable<byte> Data = null)
         {
             var Message = header.Tx.ConcatByte(Mode);
             if (Data != null) Message = Message.Concat(Data);
 
-            var ResponseQuery = queryCache.Resolve(Mode, () => rxQueue.GetEnumerable(250, true).DecueueWhere(successPredicate(Mode)));
-            //var ReceiveQueue = BlockingQueueFactory.GetBlockingQueue();
-            //var message = ReceiveQueue.GetBlockingEnumerable(250).Where(successPredicate(Mode)).FirstOrDefault();
-
             Channel.SendMessage(Message);
 
-            var Response = ResponseQuery.FirstOrDefault();
+            var Response = rxQueue.Where(successMessage(Mode)).RemoveFrom(rxQueue).FirstOrDefault();
 
+            if (Response != null)
+            {
                 var Offset = header.Rx.Length + 1 + ResultDataOffset;
+                return new ServiceResult(new ArraySegment<byte>(Response.Data, Offset, Response.Data.Length - Offset));
+            }
 
-                if (Response != null) return new ServiceResult(new ArraySegment<byte>(Response.Data, Offset, Response.Data.Length - Offset));
+            rxQueue.Unconsume();
 
-                Response = rxQueue.DecueueWhere(failPredicate(Mode)).FirstOrDefault();
+            Response = rxQueue.Where(failMessage(Mode)).RemoveFrom(rxQueue).FirstOrDefault();
 
-                if (Response != null) return new ServiceResult((Response)Response.Data.Last());
+            if (Response != null)
+            {
+                return new ServiceResult((ExitCode)Response.Data.Last());
+            }
 
             throw new Exception($"No response from module for service mode {Mode}!");
         }
-        protected abstract Predicate<J2534.Message> successPredicate(byte Mode);
-        protected abstract Predicate<J2534.Message> failPredicate(byte Mode);
+
+        protected abstract Func<J2534.Message, bool> successMessage(byte Mode);
+        protected abstract Func<J2534.Message, bool> failMessage(byte Mode);
+
+        public override string ToString()
+        {
+            return Channel.ToString();
+        }
 
         protected override void DisposeManaged()
         {
             sessionChannel?.Dispose();
-        }
-        protected class IEnumerableCache
-        {
-            //TODO: Change this to use array instead of dictionary.  Should be faster and lighter
-            private Dictionary<byte, IEnumerable<J2534.Message>> cache { get; } = new Dictionary<byte, IEnumerable<J2534.Message>>();
-            public IEnumerable<J2534.Message> Resolve(byte Mode, Func<IEnumerable<J2534.Message>> NewEnumerable)
-            {
-                if (!cache.ContainsKey(Mode))
-                    cache.Add(Mode, NewEnumerable());
-                return cache[Mode];
-            }
         }
     }
 }

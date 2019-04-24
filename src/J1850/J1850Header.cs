@@ -25,7 +25,7 @@ using Common.Extensions;
 
 namespace SAE.J1979.J1850
 {
-    public class Header : IHeader
+    public class J1850Header : IHeader
     {
         private byte[] tx, rx;
         private byte zz = 0;
@@ -35,7 +35,7 @@ namespace SAE.J1979.J1850
         private bool h_bit = false;
         private bool k_bit = true;
         private bool y_bit = true;
-        public Header()
+        public J1850Header()
         {
             components2Array();
         }

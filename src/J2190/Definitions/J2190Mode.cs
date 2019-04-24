@@ -22,7 +22,7 @@
  #endregion
 namespace SAE.J1979.J2190
 {
-    public enum Mode : byte
+    public enum J2190Mode : byte
     {
         INITIATE_DIAG_OP = 0x10,
         MODULE_RESET = 0x11,

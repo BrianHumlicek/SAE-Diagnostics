@@ -24,22 +24,19 @@ using System;
 
  namespace SAE.J1979.ISO15765
 {
-    public class Session : J1979.Session
+    public class ISO15765Session : J1979Session
     {
-        protected override SessionChannel sessionChannel { get; }
-
-        public Session(J2534.Device Device) : base(new Header())
+        public ISO15765Session(J2534.Device Device) : base(new ISO15765Header(), SessionChannel.Factory.Create(Device, J2534.Protocol.ISO15765, J2534.Baud.ISO15765, J2534.ConnectFlag.NONE))
         {
-            sessionChannel = SessionChannelFactory.GetSessionChannel(Device, J2534.Protocol.ISO15765, J2534.Baud.ISO15765, J2534.ConnectFlag.NONE);
             if (!sessionChannel.IsInitialized)
             {
-                InitializeDefaults();
+                initializeChannel();
                 sessionChannel.IsInitialized = true;
             }
         }
-        public override void InitializeDefaults()
+        protected override void initializeChannel()
         {
-            base.InitializeDefaults();
+            base.initializeChannel();
             for (byte addrLow = 0xE0; addrLow < 0xE1; addrLow++)
             {
                 Channel.StartMsgFilter(new J2534.MessageFilter(J2534.UserFilterType.STANDARDISO15765,
@@ -54,13 +51,13 @@ using System;
             //Channel.SetConfig(J2534.Parameter.ISO15765_STMIN, 0);
             Channel.DefaultTxFlag = J2534.TxFlag.ISO15765_FRAME_PAD;
         }
-        protected new Header header
+        protected new ISO15765Header header
         {
-            get { return (Header)base.header; }
+            get { return (ISO15765Header)base.header; }
         }
-        protected override Predicate<J2534.Message> successPredicate(byte Mode)
+        protected override Func<J2534.Message, bool> successMessage(byte Mode)
         {
-            return new Predicate<J2534.Message>(Message =>
+            return new Func<J2534.Message, bool>(Message =>
             {
                 if ((Message?.Data?.Length ?? 0) > 4 &&
                     Message.Data[4] == (Mode ^ 0x40) &&
@@ -69,13 +66,13 @@ using System;
                 return false;
             });
         }
-        protected override Predicate<J2534.Message> failPredicate(byte Mode)
+        protected override Func<J2534.Message, bool> failMessage(byte Mode)
         {
-            return new Predicate<J2534.Message>(Message =>
+            return new Func<J2534.Message, bool>(Message =>
             {
                 if ((Message?.Data?.Length ?? 0) > 5 &&
                     Message.Data[5] == (byte)Mode &&
-                    Message.Data[4] == (byte)J1979.Mode.GENERAL_RESPONSE &&
+                    Message.Data[4] == (byte)J1979.J1979Mode.GENERAL_RESPONSE &&
                     Message.Data[3] == base.header.Rx[3] &&
                     Message.Data[2] == base.header.Rx[2]) return true;
                 return false;

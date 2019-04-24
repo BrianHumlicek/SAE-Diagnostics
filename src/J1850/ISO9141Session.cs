@@ -20,29 +20,13 @@
  * SOFTWARE.
  */
  #endregion
-using Common.Extensions;
-
-namespace SAE.J1979.ISO15765
+namespace SAE.J1979.J1850
 {
-    public class Header : IHeader
+    public class ISO9141Session : J1850Session
     {
-        private byte[] tx;
-        private byte[] rx;
-        public Header(int Target = 0x7E0)
+        public ISO9141Session(J2534.Device Device) : base(SessionChannel.Factory.Create(Device, J2534.Protocol.ISO9141, J2534.Baud.ISO9141, J2534.ConnectFlag.NONE))
         {
-            this.Target = Target;
+
         }
-        public int Target
-        {
-            set
-            {
-                int Source = value + 0x08;
-                tx = new byte[4] { 0x00, 0x00, value.Byte1(), value.Byte0() };
-                rx = new byte[4] { 0x00, 0x00, Source.Byte1(), Source.Byte0() };
-            }
-        }
-        public int MaxLength => 4;
-        public byte[] Rx => rx;
-        public byte[] Tx => tx;
     }
 }

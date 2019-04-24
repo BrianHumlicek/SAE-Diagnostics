@@ -22,7 +22,7 @@
  #endregion
 namespace SAE.J1979
 {
-    public enum Response
+    public enum ExitCode
     {
         AFFIRMITIVE_RESPONSE = 0x00,
         GENERAL_REJECT = 0x10,

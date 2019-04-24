@@ -20,11 +20,14 @@
  * SOFTWARE.
  */
  #endregion
-using System;
-
-namespace SAE.J1979.J1850
+namespace SAE.J1979.J2190.Ford.PWM
 {
-    class VPW_Session : Session
+    public enum DiagRoutine
     {
+        IVFEREntry = 0xA0,
+        EraseFlash = 0xA1,
+        WriteFlash = 0xA2,
+        RunChecksum = 0xA3,
+        SetBaudRate = 0xA4
     }
 }

@@ -20,51 +20,24 @@
  * SOFTWARE.
  */
  #endregion
-using System;
-using System.Threading;
-using Common;
+using System.Collections.Concurrent;
 
 namespace SAE.BlockingQueue
 {
-    public class ActionMultiplex
+    public partial class BlockingQueue<T>
     {
-        bool PropagateExceptions;
-        BoolInterlock Interlock = new BoolInterlock();
-        Exception MultiplexException;
-        EventWaitHandle MultiplexWaitHandle = new EventWaitHandle(false, EventResetMode.ManualReset);
-        Action EventAction;
+        ConcurrentBag<BlockingQueueNode> nodepool = new ConcurrentBag<BlockingQueueNode>();
 
-        public ActionMultiplex(Action EventAction, bool PropagateExceptions = false)
+        protected BlockingQueueNode CreateNode(T Item)
         {
-            this.EventAction = EventAction;
-            this.PropagateExceptions = PropagateExceptions;
-        }
-
-        public void Invoke()
-        {
-            if (Interlock.Enter())
+            BlockingQueueNode NewNode;
+            if (!nodepool.TryTake(out NewNode))
             {
-                try
-                {
-                    EventAction.Invoke();
-                }
-                catch (Exception ActionExcpetion)
-                {
-                    MultiplexException = ActionExcpetion;
-                    throw;
-                }
-                finally
-                {
-                    MultiplexException = null;
-                    MultiplexWaitHandle.Set();
-                    Interlock.Exit();
-                }
+                NewNode = new BlockingQueueReusableNode(nodepool);
             }
-            else
-            {
-                MultiplexWaitHandle.WaitOne();
-                if (MultiplexException != null && PropagateExceptions) throw MultiplexException;
-            }
+            NewNode.Item = Item;
+            nodemap.Add(NewNode.Item, NewNode);
+            return NewNode;
         }
     }
 }

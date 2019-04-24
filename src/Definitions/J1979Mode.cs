@@ -20,29 +20,20 @@
  * SOFTWARE.
  */
  #endregion
-using System;
-using System.Collections.Generic;
-
-namespace SAE.J1979.ISO15765.ISO14229
+namespace SAE.J1979
 {
-    public class Session : ISO15765.Session
+    public enum J1979Mode : byte
     {
-        public Session(J2534.Device Device) : base(Device)
-        {
-
-        }
-        public ServiceResult Mode10(Mode10 Subfunction, bool SuppressPositiveResponse = false)
-        {
-            return ISOserviceHandler((byte)Mode.DiagnosticSessionControl, 1, new byte[] { (byte)Subfunction }, SuppressPositiveResponse);
-        }
-        protected ServiceResult ISOserviceHandler(byte Mode, int NumOfParams, IEnumerable<byte> Data, bool SuppressPositiveResponse)
-        {
-            if (SuppressPositiveResponse)
-                Mode |= 0x80;
-            else
-                Mode &= 0x7F;
-
-            return serviceTransaction(Mode, NumOfParams, Data);
-        }
+        REQ_DIAG_DATA = 0x01,
+        REQ_FREEZE_FRAME_DATA = 0x02,
+        REQ_EMISSION_DIAG_DATA = 0x03,
+        CLEAR_EMISSION_DIAG_DATA = 0x04,
+        REQ_O2_MON_RESULTS = 0x05,
+        REQ_SYSTEM_MON_RESULTS = 0x06,
+        REQ_CURRENT_DTC = 0x07,
+        REQ_SYSTEM_CTL = 0x08,
+        REQ_VEHICLE_INFO = 0x09,
+        REQ_PERMANENT_EMISSION_DTC = 0x0A,
+        GENERAL_RESPONSE = 0x7F
     }
 }

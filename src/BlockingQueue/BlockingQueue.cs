@@ -19,46 +19,123 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-#endregion
+ #endregion
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace BlockingQueue
+namespace SAE.BlockingQueue
 {
-    public class BlockingLinkedList<T> : LinkedList<T>
+    public partial class BlockingQueue<T> : IEnumerable<T>
     {
-        public BlockingLinkedList() : base() { }
-        public BlockingLinkedList(IEnumerable<T> enumerable) : base(enumerable) { }
+        readonly BlockingQueue<T> root_queue;
+        readonly object sync;
+        readonly Hashtable nodemap;
+        readonly ActionMultiplex addactionmux;
+        bool consuming;
+        BlockingQueueNode nodezero;
+        BlockingQueueNode lastnode;
 
-        public IEnumerable<T> GetBlockingEnumerable(int blockingTimeout = 0)
+        BlockingQueueNode LastNode { get => root_queue.lastnode; set => root_queue.lastnode = value; }
+
+        public BlockingQueue()
         {
-            var blockingTimer = new System.Diagnostics.Stopwatch();
-            blockingTimer.Start();
-            do
-            {
-                //Get a message for 10ms
-                var node = First;
-                while (node != null)
-                {
-                    yield return node.Value;
-                    node = node.Next;
-                }
-
-            } while (blockingTimer.ElapsedMilliseconds < blockingTimeout);
+            root_queue = this;
+            sync = new object();
+            nodemap = new Hashtable();            
+            nodezero = new BlockingQueueNode();
+            nodezero.Next = nodezero;
+            LastNode = nodezero;
         }
-    }
-    public static class BlockingLinkedlistIEnumerableExtension
-    {
-        public static IEnumerable<T> ConsumeFrom<T>(this IEnumerable<T> enumerable, BlockingLinkedList<T> queue)
+
+        public BlockingQueue(Action AddAction) : this()
         {
-            foreach (T obj in enumerable)
+            addactionmux = new ActionMultiplex(AddAction);
+        }
+
+        protected BlockingQueue(BlockingQueue<T> Root_Queue)
+        {
+            root_queue = Root_Queue;
+            sync = root_queue.sync;
+            nodemap = root_queue.nodemap;
+            addactionmux = root_queue.addactionmux;
+            nodezero = root_queue.nodezero;
+        }
+
+        public void Add(T Item)
+        {
+            AppendNode(CreateNode(Item));
+        }
+
+        public void AddRange(IEnumerable<T> ItemRange)
+        {
+            var ItemRangeEnumerator = ItemRange?.GetEnumerator();
+
+            if (ItemRangeEnumerator?.MoveNext() ?? false)
             {
-                queue.Remove(obj);
-                yield return obj;
+                BlockingQueueNode RangeFirstNode = CreateNode(ItemRangeEnumerator.Current);
+                BlockingQueueNode RangeLastNode = RangeFirstNode;
+                while (ItemRangeEnumerator.MoveNext())
+                {
+                    BlockingQueueNode RangeNextNode = CreateNode(ItemRangeEnumerator.Current);
+                    RangeLastNode.Next = RangeNextNode;
+                    RangeNextNode.Previous = RangeLastNode;
+                    RangeLastNode = RangeNextNode;
+                }
+                AppendNode(RangeFirstNode, RangeLastNode);
+            }
+        }
+
+        private void AppendNode(BlockingQueueNode NewNode, BlockingQueueNode LastNode = null)
+        {
+            lock (sync)
+            {
+                this.LastNode.Next = NewNode;
+                NewNode.Previous = this.LastNode;
+                this.LastNode = LastNode ?? NewNode;
+            }
+        }
+
+        public int BlockingTimeout { get; set; }
+
+        public BlockingQueue<T> GetConsumingEnumerable()
+        {
+            return new BlockingQueue<T>(this) { consuming = true };
+        }
+
+        public virtual IEnumerator<T> GetEnumerator()
+        {
+            return new BlockingQueueEnumerator(this, consuming, BlockingTimeout);
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return this.GetEnumerator();
+        }
+
+        public void Remove(T obj)
+        {
+            lock (sync)
+            {
+                BlockingQueueNode node = (BlockingQueueNode)nodemap[obj];
+                if (node != null)
+                {
+                    if (node == LastNode)
+                    {
+                        LastNode = node.Previous;
+                    }
+
+                    node.Remove();
+                    nodemap.Remove(obj);
+                }
+            }
+        }
+
+        public void Unconsume()
+        {
+            lock (sync)
+            {
+                this.nodezero = root_queue.nodezero;
             }
         }
     }

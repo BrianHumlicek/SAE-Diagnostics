@@ -26,7 +26,7 @@ using System.Collections.Generic;
 
 namespace RealtimeQueue
 {
-    public class RealtimeQueueEnumerable<EnumerableT> : Common.LiteDisposable, IEnumerable<EnumerableT>
+    public class RealtimeQueueEnumerable<EnumerableT> : IEnumerable<EnumerableT>//, Common.ManagedDisposable
     {
         public RealtimeQueue<EnumerableT> RootQueue { get; protected set; }
         public object Bookmark { private get; set; }
